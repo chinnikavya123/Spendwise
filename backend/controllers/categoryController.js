@@ -108,3 +108,137 @@ export const createCategory = async (req, res) => {
     });
   }
 };
+
+
+export const updateCategory = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const categoryId = Number(req.params.id);
+    const { name, type, icon, color } = req.body;
+
+    if (!Number.isSafeInteger(categoryId) || categoryId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category ID."
+      });
+    }
+
+    const [categories] = await pool.query(
+      `SELECT id, name, type, icon, color
+       FROM categories
+       WHERE id = ? AND user_id = ?`,
+      [categoryId, userId]
+    );
+
+    if (categories.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Custom category not found."
+      });
+    }
+
+    const currentCategory = categories[0];
+
+    const categoryName = name === undefined
+      ? currentCategory.name
+      : typeof name === "string" ? name.trim() : "";
+
+    const categoryType = type === undefined
+      ? currentCategory.type
+      : typeof type === "string" ? type.toLowerCase() : "";
+
+    const categoryIcon = icon === undefined
+      ? currentCategory.icon
+      : icon || null;
+
+    const categoryColor = color === undefined
+      ? currentCategory.color
+      : color || null;
+
+    if (!categoryName || categoryName.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name must contain 1 to 100 characters."
+      });
+    }
+
+    if (!["income", "expense"].includes(categoryType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Category type must be income or expense."
+      });
+    }
+
+    if (
+      categoryIcon !== null &&
+      (typeof categoryIcon !== "string" || categoryIcon.length > 50)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Icon must be a string with at most 50 characters."
+      });
+    }
+
+    if (
+      categoryColor !== null &&
+      (typeof categoryColor !== "string" || categoryColor.length > 20)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Color must be a string with at most 20 characters."
+      });
+    }
+
+    const [existingCategories] = await pool.query(
+      `SELECT id
+       FROM categories
+       WHERE (user_id IS NULL OR user_id = ?)
+       AND LOWER(name) = LOWER(?)
+       AND type = ?
+       AND id != ?`,
+      [userId, categoryName, categoryType, categoryId]
+    );
+
+    if (existingCategories.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Another category with this name already exists."
+      });
+    }
+
+    await pool.query(
+      `UPDATE categories
+       SET name = ?, type = ?, icon = ?, color = ?
+       WHERE id = ? AND user_id = ?`,
+      [
+        categoryName,
+        categoryType,
+        categoryIcon,
+        categoryColor,
+        categoryId,
+        userId
+      ]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Category updated successfully!",
+      category: {
+        id: categoryId,
+        user_id: userId,
+        name: categoryName,
+        type: categoryType,
+        icon: categoryIcon,
+        color: categoryColor,
+        is_default: 0
+      }
+    });
+  } catch (error) {
+    console.error("Update category error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while updating the category."
+    });
+  }
+};
