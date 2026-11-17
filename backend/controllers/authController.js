@@ -133,3 +133,35 @@ export const loginUser = async (req, res) => {
     });
   }
 };
+
+
+export const getProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const [users] = await pool.query(
+      "SELECT id, name, email, created_at FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found."
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile retrieved successfully!",
+      user: users[0]
+    });
+  } catch (error) {
+    console.error("Profile retrieval error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while retrieving your profile."
+    });
+  }
+};
