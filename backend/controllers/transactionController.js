@@ -492,3 +492,50 @@ export const updateTransaction = async (req, res) => {
     });
   }
 };
+
+
+export const deleteTransaction = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const transactionId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(transactionId) || transactionId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid transaction ID."
+      });
+    }
+
+    const [transactions] = await pool.query(
+      `SELECT id
+       FROM transactions
+       WHERE id = ? AND user_id = ?`,
+      [transactionId, userId]
+    );
+
+    if (transactions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Transaction not found."
+      });
+    }
+
+    await pool.query(
+      `DELETE FROM transactions
+       WHERE id = ? AND user_id = ?`,
+      [transactionId, userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Transaction deleted successfully!"
+    });
+  } catch (error) {
+    console.error("Delete transaction error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while deleting the transaction."
+    });
+  }
+};
