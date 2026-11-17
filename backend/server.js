@@ -2,6 +2,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import pool, { connectDB } from "./config/db.js";
 
 dotenv.config();
 
@@ -29,6 +30,37 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`SpendWise server running on http://localhost:${PORT}`);
+app.get("/api/db-test", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT DATABASE() AS databaseName, NOW() AS serverTime"
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "MySQL query executed successfully!",
+      data: rows[0]
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Database query failed",
+      error: error.message
+    });
+  }
 });
+
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    app.listen(PORT, () => {
+      console.log(`SpendWise server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start SpendWise server:", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
