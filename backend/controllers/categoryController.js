@@ -242,3 +242,50 @@ export const updateCategory = async (req, res) => {
     });
   }
 };
+
+
+export const deleteCategory = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const categoryId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(categoryId) || categoryId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category ID."
+      });
+    }
+
+    const [categories] = await pool.query(
+      `SELECT id
+       FROM categories
+       WHERE id = ? AND user_id = ?`,
+      [categoryId, userId]
+    );
+
+    if (categories.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Custom category not found."
+      });
+    }
+
+    await pool.query(
+      `DELETE FROM categories
+       WHERE id = ? AND user_id = ?`,
+      [categoryId, userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Custom category deleted successfully!"
+    });
+  } catch (error) {
+    console.error("Delete category error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while deleting the category."
+    });
+  }
+};

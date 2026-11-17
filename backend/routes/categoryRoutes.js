@@ -3,7 +3,8 @@ import express from "express";
 import {
   getCategories,
   createCategory,
-  updateCategory
+  updateCategory,
+  deleteCategory
 } from "../controllers/categoryController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
@@ -12,5 +13,6 @@ const router = express.Router();
 router.get("/", verifyToken, getCategories);
 router.post("/", verifyToken, createCategory);
 router.put("/:id", verifyToken, updateCategory);
+router.delete("/:id", verifyToken, deleteCategory);
 
 export default router;
