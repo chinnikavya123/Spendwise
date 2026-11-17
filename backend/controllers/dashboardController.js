@@ -63,3 +63,41 @@ export const getDashboardSummary = async (req, res) => {
     });
   }
 };
+
+
+export const getRecentTransactions = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const [transactions] = await pool.query(
+      `SELECT
+        id,
+        category_id,
+        category_name,
+        type,
+        amount,
+        description,
+        transaction_date,
+        payment_method
+      FROM transactions
+      WHERE user_id = ?
+      ORDER BY transaction_date DESC, created_at DESC, id DESC
+      LIMIT 5`,
+      [userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Recent transactions retrieved successfully!",
+      total: transactions.length,
+      transactions
+    });
+  } catch (error) {
+    console.error("Recent transactions error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while retrieving recent transactions."
+    });
+  }
+};
