@@ -8,7 +8,6 @@ import {
   Tv,
   ShoppingBasket,
   Sparkles,
-  Plus,
   CalendarDays
 } from "lucide-react";
 

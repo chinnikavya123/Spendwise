@@ -1,5 +1,5 @@
 
-import { Search, Bell, ChevronDown, CalendarDays } from "lucide-react";
+import { Search, Bell, ChevronDown } from "lucide-react";
 
 export default function Header({ activePage }) {
   return (

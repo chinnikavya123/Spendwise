@@ -9,7 +9,6 @@ import {
   Pencil,
   Trash2,
   X,
-  CalendarDays,
   Filter,
   ArrowUpDown,
   ShoppingBag,

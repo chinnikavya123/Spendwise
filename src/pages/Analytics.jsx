@@ -65,7 +65,6 @@ const getTransactions = () => {
 const getPeriodDates = (period, transactions) => {
   const today = new Date();
   const start = new Date(today.getFullYear(), today.getMonth(), 1);
-  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
   if (period === "thisMonth") {
     return { start, end: today };
