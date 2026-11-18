@@ -23,7 +23,7 @@ export const verifyToken = (req, res, next) => {
     req.user = decoded;
 
     next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({
       success: false,
       message: "Invalid or expired authentication token."

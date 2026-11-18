@@ -7,6 +7,8 @@ import Header from "./components/Header";
 import Overview from "./pages/Overview";
 import Transactions from "./pages/Transactions";
 import Analytics from "./pages/Analytics";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 import "./App.css";
 
@@ -38,6 +40,14 @@ function App() {
 
   const activePage = pageNames[location.pathname] || "Overview";
 
+  if (location.pathname === "/login") {
+    return <Login />;
+  }
+
+  if (location.pathname === "/signup") {
+    return <Signup />;
+  }
+
   return (
     <div className="app-layout">
       <Sidebar
@@ -54,18 +64,22 @@ function App() {
             <Route path="/" element={<Overview />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/analytics" element={<Analytics />} />
+
             <Route
               path="/budgets"
               element={<ComingSoon title="Budgets" />}
             />
+
             <Route
               path="/smart-insights"
               element={<ComingSoon title="Smart Insights" />}
             />
+
             <Route
               path="/settings"
               element={<ComingSoon title="Settings" />}
             />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
 
