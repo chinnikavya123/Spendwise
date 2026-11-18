@@ -235,3 +235,188 @@ export const getSavingsGoals = async (req, res) => {
     });
   }
 };
+
+
+export const updateSavingsGoal = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const goalId = Number(req.params.id);
+
+    if (!Number.isInteger(goalId) || goalId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid savings goal ID."
+      });
+    }
+
+    const [existingGoals] = await pool.query(
+  `SELECT
+      id,
+      name,
+      description,
+      target_amount,
+      current_amount,
+      DATE_FORMAT(target_date, '%Y-%m-%d') AS target_date
+   FROM savings_goals
+   WHERE id = ? AND user_id = ?`,
+  [goalId, userId]
+);
+
+    if (existingGoals.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Savings goal not found."
+      });
+    }
+
+    const existingGoal = existingGoals[0];
+
+    const name = req.body.name === undefined
+      ? existingGoal.name
+      : req.body.name;
+
+    const description = req.body.description === undefined
+      ? existingGoal.description
+      : req.body.description;
+
+    const targetAmount = req.body.target_amount === undefined
+      ? Number(existingGoal.target_amount)
+      : Number(req.body.target_amount);
+
+    const currentAmount = req.body.current_amount === undefined
+      ? Number(existingGoal.current_amount)
+      : Number(req.body.current_amount);
+
+    const targetDate = req.body.target_date === undefined
+      ? existingGoal.target_date
+      : req.body.target_date;
+
+    if (
+      typeof name !== "string" ||
+      !name.trim() ||
+      name.trim().length > 150
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid goal name (maximum 150 characters)."
+      });
+    }
+
+    if (
+      description !== null &&
+      description !== undefined &&
+      (
+        typeof description !== "string" ||
+        description.length > 500
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Description must be a string of at most 500 characters."
+      });
+    }
+
+    if (
+      !Number.isFinite(targetAmount) ||
+      targetAmount <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Target amount must be greater than zero."
+      });
+    }
+
+    if (
+      !Number.isFinite(currentAmount) ||
+      currentAmount < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Current amount cannot be negative."
+      });
+    }
+
+    if (currentAmount > targetAmount) {
+      return res.status(400).json({
+        success: false,
+        message: "Current amount cannot exceed the target amount."
+      });
+    }
+
+    if (
+      targetDate !== null &&
+      targetDate !== undefined
+    ) {
+      if (
+        typeof targetDate !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Please provide a valid target date in YYYY-MM-DD format."
+        });
+      }
+
+      const date = new Date(`${targetDate}T00:00:00Z`);
+
+      if (
+        Number.isNaN(date.getTime()) ||
+        date.toISOString().slice(0, 10) !== targetDate
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Please provide a valid target date."
+        });
+      }
+    }
+
+    await pool.query(
+      `UPDATE savings_goals
+       SET name = ?,
+           description = ?,
+           target_amount = ?,
+           current_amount = ?,
+           target_date = ?
+       WHERE id = ? AND user_id = ?`,
+      [
+        name.trim(),
+        description?.trim() || null,
+        targetAmount,
+        currentAmount,
+        targetDate || null,
+        goalId,
+        userId
+      ]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Savings goal updated successfully!",
+      goal: {
+        id: goalId,
+        name: name.trim(),
+        description: description?.trim() || null,
+        target_amount: targetAmount,
+        current_amount: currentAmount,
+        remaining_amount: Number(
+          Math.max(targetAmount - currentAmount, 0).toFixed(2)
+        ),
+        target_date: targetDate || null,
+        percentage_completed: Number(
+          ((currentAmount / targetAmount) * 100).toFixed(2)
+        ),
+        status: currentAmount >= targetAmount
+          ? "Completed"
+          : "In Progress"
+      }
+    });
+
+  } catch (error) {
+    console.error("Update savings goal error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while updating the savings goal."
+    });
+  }
+};
