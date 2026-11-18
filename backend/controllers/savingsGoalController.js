@@ -420,3 +420,41 @@ export const updateSavingsGoal = async (req, res) => {
     });
   }
 };
+
+export const deleteSavingsGoal = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const goalId = Number(req.params.id);
+
+    if (!Number.isInteger(goalId) || goalId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid savings goal ID."
+      });
+    }
+
+    const [result] = await pool.query(
+      `DELETE FROM savings_goals
+       WHERE id = ? AND user_id = ?`,
+      [goalId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Savings goal not found."
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Savings goal deleted successfully!"
+    });
+  } catch (error) {
+    console.error("Delete savings goal error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while deleting the savings goal."
+    });
+  }
+};
