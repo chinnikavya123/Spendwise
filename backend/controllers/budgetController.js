@@ -109,3 +109,139 @@ export const createBudget = async (req, res) => {
     });
   }
 };
+
+
+export const getBudgets = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Get requested month or use current month
+    const now = new Date();
+
+    const currentMonth =
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    const month = req.query.month || currentMonth;
+
+    // Validate month
+    if (
+      typeof month !== "string" ||
+      !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid month in YYYY-MM format."
+      });
+    }
+
+    const budgetDate = `${month}-01`;
+
+    // Retrieve budgets and calculate actual spending
+    const [rows] = await pool.query(
+      `SELECT
+        b.id,
+        b.category_id,
+        c.name AS category_name,
+        b.amount AS budget_amount,
+        b.budget_month,
+
+        COALESCE(SUM(t.amount), 0) AS spent_amount,
+
+        COUNT(t.id) AS transaction_count
+
+      FROM budgets b
+
+      INNER JOIN categories c
+        ON b.category_id = c.id
+
+      LEFT JOIN transactions t
+        ON t.user_id = b.user_id
+        AND t.category_id = b.category_id
+        AND t.type = 'expense'
+        AND t.transaction_date >= b.budget_month
+        AND t.transaction_date < DATE_ADD(
+          b.budget_month,
+          INTERVAL 1 MONTH
+        )
+
+      WHERE b.user_id = ?
+        AND b.budget_month = ?
+
+      GROUP BY
+        b.id,
+        b.category_id,
+        c.name,
+        b.amount,
+        b.budget_month
+
+      ORDER BY c.name ASC`,
+      [userId, budgetDate]
+    );
+
+    // Calculate budget usage and status
+    const budgets = rows.map((row) => {
+      const budgetAmount = Number(row.budget_amount);
+      const spentAmount = Number(row.spent_amount);
+
+      const remainingAmount = budgetAmount - spentAmount;
+
+      const percentageUsed = Number(
+        ((spentAmount / budgetAmount) * 100).toFixed(2)
+      );
+
+      let status = "Safe";
+
+      if (percentageUsed >= 75 && percentageUsed <= 100) {
+        status = "Warning";
+      } else if (percentageUsed > 100) {
+        status = "Exceeded";
+      }
+
+      return {
+        id: row.id,
+        category_id: row.category_id,
+        category_name: row.category_name,
+        budget_amount: budgetAmount,
+        spent_amount: spentAmount,
+        remaining_amount: remainingAmount,
+        percentage_used: percentageUsed,
+        transaction_count: Number(row.transaction_count),
+        status
+      };
+    });
+
+    const totalBudget = budgets.reduce(
+      (sum, item) => sum + item.budget_amount,
+      0
+    );
+
+    const totalSpent = budgets.reduce(
+      (sum, item) => sum + item.spent_amount,
+      0
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Budgets retrieved successfully!",
+      month,
+      summary: {
+        total_budget: totalBudget,
+        total_spent: totalSpent,
+        remaining_budget: totalBudget - totalSpent,
+        percentage_used: totalBudget > 0
+          ? Number(((totalSpent / totalBudget) * 100).toFixed(2))
+          : 0
+      },
+      total_budgets: budgets.length,
+      budgets
+    });
+
+  } catch (error) {
+    console.error("Get budgets error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while retrieving budgets."
+    });
+  }
+};
