@@ -130,3 +130,76 @@ export const getTransactionReport = async (req, res) => {
     });
   }
 };
+
+
+export const exportTransactionsCSV = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const [transactions] = await pool.query(
+      `SELECT
+        t.id,
+        c.name AS category_name,
+        t.type,
+        t.amount,
+        t.description,
+        DATE_FORMAT(t.transaction_date, '%Y-%m-%d') AS transaction_date,
+        t.payment_method
+      FROM transactions t
+      JOIN categories c ON t.category_id = c.id
+      WHERE t.user_id = ?
+      ORDER BY t.transaction_date DESC, t.created_at DESC, t.id DESC`,
+      [userId]
+    );
+
+    const escapeCSV = (value) => {
+      let text = String(value ?? "");
+
+      if (/^[=+\-@\t\r]/.test(text)) {
+        text = `'${text}`;
+      }
+
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const headers = [
+      "Transaction ID",
+      "Category",
+      "Type",
+      "Amount",
+      "Description",
+      "Transaction Date",
+      "Payment Method"
+    ];
+
+    const rows = transactions.map((transaction) => [
+      transaction.id,
+      transaction.category_name,
+      transaction.type,
+      transaction.amount,
+      transaction.description,
+      transaction.transaction_date,
+      transaction.payment_method
+    ]);
+
+    const csv = [
+      headers.map(escapeCSV).join(","),
+      ...rows.map((row) => row.map(escapeCSV).join(","))
+    ].join("\r\n");
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="spendwise_transactions.csv"'
+    );
+
+    return res.status(200).send("\uFEFF" + csv);
+  } catch (error) {
+    console.error("Export transactions CSV error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while exporting transactions."
+    });
+  }
+};
