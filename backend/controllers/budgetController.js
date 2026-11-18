@@ -391,3 +391,44 @@ export const updateBudget = async (req, res) => {
     });
   }
 };
+
+
+export const deleteBudget = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const budgetId = Number(req.params.id);
+
+    if (!Number.isInteger(budgetId) || budgetId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid budget ID."
+      });
+    }
+
+    const [result] = await pool.query(
+      `DELETE FROM budgets
+       WHERE id = ? AND user_id = ?`,
+      [budgetId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Budget not found."
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Budget deleted successfully!"
+    });
+
+  } catch (error) {
+    console.error("Delete budget error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while deleting the budget."
+    });
+  }
+};
