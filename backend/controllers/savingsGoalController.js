@@ -148,3 +148,90 @@ export const createSavingsGoal = async (req, res) => {
     });
   }
 };
+
+
+export const getSavingsGoals = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const [goals] = await pool.query(
+      `SELECT
+          id,
+          name,
+          description,
+          target_amount,
+          current_amount,
+          target_date,
+          created_at,
+          updated_at
+       FROM savings_goals
+       WHERE user_id = ?
+       ORDER BY created_at DESC, id DESC`,
+      [userId]
+    );
+
+    const formattedGoals = goals.map((goal) => {
+      const targetAmount = Number(goal.target_amount);
+      const currentAmount = Number(goal.current_amount);
+      const remainingAmount = Math.max(
+        targetAmount - currentAmount,
+        0
+      );
+
+      const percentageCompleted = Number(
+        ((currentAmount / targetAmount) * 100).toFixed(2)
+      );
+
+      return {
+        id: goal.id,
+        name: goal.name,
+        description: goal.description,
+        target_amount: targetAmount,
+        current_amount: currentAmount,
+        remaining_amount: remainingAmount,
+        target_date: goal.target_date,
+        percentage_completed: percentageCompleted,
+        status: currentAmount >= targetAmount
+          ? "Completed"
+          : "In Progress",
+        created_at: goal.created_at,
+        updated_at: goal.updated_at
+      };
+    });
+
+    const totalTarget = formattedGoals.reduce(
+      (sum, goal) => sum + goal.target_amount,
+      0
+    );
+
+    const totalSaved = formattedGoals.reduce(
+      (sum, goal) => sum + goal.current_amount,
+      0
+    );
+
+    const totalRemaining = formattedGoals.reduce(
+      (sum, goal) => sum + goal.remaining_amount,
+      0
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Savings goals retrieved successfully!",
+      summary: {
+        total_goals: formattedGoals.length,
+        total_target: Number(totalTarget.toFixed(2)),
+        total_saved: Number(totalSaved.toFixed(2)),
+        total_remaining: Number(totalRemaining.toFixed(2))
+      },
+      goals: formattedGoals
+    });
+
+  } catch (error) {
+    console.error("Get savings goals error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while retrieving savings goals."
+    });
+  }
+};
