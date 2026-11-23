@@ -11,11 +11,15 @@ import {
   CalendarDays
 } from "lucide-react";
 
-import { dashboardStats, transactions, budgetData } from "../data/dashboardData";
+import { useEffect, useState } from "react";
+import { dashboardStats, budgetData } from "../data/dashboardData";
 
 import StatCard from "../components/StatCard";
 import SpendingChart from "../components/SpendingChart";
 import CategoryChart from "../components/CategoryChart";
+
+import api from "../services/api";
+import { useAuth } from "../context/useAuth";
 
 const transactionIcons = {
   "shopping-basket": ShoppingBasket,
@@ -26,6 +30,59 @@ const transactionIcons = {
 };
 
 export default function Overview() {
+  const { user } = useAuth();
+
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState("");
+  const [recentTransactions, setRecentTransactions] = useState([]);
+const [transactionsLoading, setTransactionsLoading] = useState(true);
+const [transactionsError, setTransactionsError] = useState("");
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const response = await api.get("/dashboard/summary");
+        setSummary(response.data.summary);
+      } catch (error) {
+        setSummaryError(
+          error.response?.data?.message ||
+          "Unable to load dashboard summary."
+        );
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+
+    fetchSummary();
+  }, []);
+
+  useEffect(() => {
+  const fetchRecentTransactions = async () => {
+    try {
+      const response = await api.get("/dashboard/recent-transactions");
+      setRecentTransactions(response.data.transactions);
+    } catch (error) {
+      setTransactionsError(
+        error.response?.data?.message ||
+        "Unable to load recent transactions."
+      );
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
+
+  fetchRecentTransactions();
+}, []);
+
+  const summaryValues = {
+    "Total Balance": summary?.balance ?? 0,
+    "Monthly Income": summary?.monthly_income ?? 0,
+    "Monthly Expenses": summary?.monthly_expenses ?? 0,
+    "Total Savings": summary
+      ? Number(summary.total_income) - Number(summary.total_expenses)
+      : 0
+  };
+
   return (
     <div className="overview-page">
       <div className="welcome-section">
@@ -33,7 +90,11 @@ export default function Overview() {
           <div className="welcome-tag">
             <Sparkles size={14} /> YOUR FINANCIAL SPACE
           </div>
-          <h1>Good evening, Kavya <span>✦</span></h1>
+
+          <h1>
+            Good evening, {user?.name || "User"} <span>✦</span>
+          </h1>
+
           <p>Here's what's happening with your money today.</p>
         </div>
 
@@ -44,9 +105,23 @@ export default function Overview() {
       </div>
 
       <section className="stats-grid">
-        {dashboardStats.map((stat) => (
-          <StatCard key={stat.title} stat={stat} />
-        ))}
+        {summaryLoading ? (
+          <p>Loading your financial summary...</p>
+        ) : summaryError ? (
+          <p>{summaryError}</p>
+        ) : (
+          dashboardStats.map((stat) => (
+            <StatCard
+              key={stat.title}
+              stat={{
+                ...stat,
+                amount: Number(summaryValues[stat.title]),
+                change: "",
+                description: "Live account data"
+              }}
+            />
+          ))
+        )}
       </section>
 
       <section className="charts-grid">
@@ -68,27 +143,49 @@ export default function Overview() {
           </div>
 
           <div className="transaction-list">
-            {transactions.map((item) => {
-              const Icon = transactionIcons[item.icon];
+  {transactionsLoading ? (
+    <p>Loading recent transactions...</p>
+  ) : transactionsError ? (
+    <p>{transactionsError}</p>
+  ) : recentTransactions.length === 0 ? (
+    <p>No transactions yet. Add your first transaction!</p>
+  ) : (
+    recentTransactions.map((item) => {
+      const isIncome = item.type === "income";
+      const Icon = isIncome ? Wallet : ShoppingBag;
+      const amount = Number(item.amount);
 
-              return (
-                <div className="transaction-row" key={item.id}>
-                  <div className="transaction-icon">
-                    <Icon size={19} />
-                  </div>
+      const transactionDate = item.transaction_date
+        ? new Date(
+            String(item.transaction_date).slice(0, 10) + "T00:00:00"
+          ).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short"
+          })
+        : "";
 
-                  <div className="transaction-details">
-                    <strong>{item.title}</strong>
-                    <span>{item.category} · {item.date}</span>
-                  </div>
-
-                  <strong className={`transaction-amount ${item.amount > 0 ? "positive" : ""}`}>
-                    {item.amount > 0 ? "+" : "-"}₹{Math.abs(item.amount).toLocaleString("en-IN")}
-                  </strong>
-                </div>
-              );
-            })}
+      return (
+        <div className="transaction-row" key={item.id}>
+          <div className="transaction-icon">
+            <Icon size={19} />
           </div>
+
+          <div className="transaction-details">
+            <strong>{item.description || item.category_name}</strong>
+            <span>{item.category_name} · {transactionDate}</span>
+          </div>
+
+          <strong
+            className={`transaction-amount ${isIncome ? "positive" : ""}`}
+          >
+            {isIncome ? "+" : "-"}₹
+            {amount.toLocaleString("en-IN")}
+          </strong>
+        </div>
+      );
+    })
+  )}
+</div>
         </div>
 
         <div className="insight-card">
@@ -127,6 +224,7 @@ export default function Overview() {
             <h3>Budget Progress</h3>
             <p>Keep your monthly spending on track</p>
           </div>
+
           <button className="text-button">
             Manage budgets <ArrowRight size={15} />
           </button>
@@ -155,7 +253,9 @@ export default function Overview() {
 
                 <div className="budget-amounts">
                   <strong>₹{budget.spent.toLocaleString("en-IN")}</strong>
-                  <span>of ₹{budget.limit.toLocaleString("en-IN")}</span>
+                  <span>
+                    of ₹{budget.limit.toLocaleString("en-IN")}
+                  </span>
                 </div>
               </div>
             );
