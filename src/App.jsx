@@ -1,6 +1,11 @@
 
 import { useState } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation
+} from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -9,6 +14,8 @@ import Transactions from "./pages/Transactions";
 import Analytics from "./pages/Analytics";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+
+import { useAuth } from "./context/useAuth";
 
 import "./App.css";
 
@@ -38,15 +45,40 @@ function App() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
+  const { isAuthenticated, loading } = useAuth();
+
+  const isAuthPage =
+    location.pathname === "/login" ||
+    location.pathname === "/signup";
+
+  if (loading) {
+    return (
+      <div className="auth-loading">
+        <div className="auth-loading-spinner" />
+        <p>Checking your session...</p>
+      </div>
+    );
+  }
+
+  if (isAuthPage) {
+    if (isAuthenticated) {
+      return <Navigate to="/" replace />;
+    }
+
+    return location.pathname === "/login" ? <Login /> : <Signup />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
   const activePage = pageNames[location.pathname] || "Overview";
-
-  if (location.pathname === "/login") {
-    return <Login />;
-  }
-
-  if (location.pathname === "/signup") {
-    return <Signup />;
-  }
 
   return (
     <div className="app-layout">
