@@ -30,6 +30,9 @@ const [transactionsError, setTransactionsError] = useState("");
 const [monthlyData, setMonthlyData] = useState([]);
 const [monthlyLoading, setMonthlyLoading] = useState(true);
 const [monthlyError, setMonthlyError] = useState("");
+const [categoryData, setCategoryData] = useState([]);
+const [categoryLoading, setCategoryLoading] = useState(true);
+const [categoryError, setCategoryError] = useState("");
   useEffect(() => {
     const fetchSummary = async () => {
       try {
@@ -82,6 +85,25 @@ useEffect(() => {
 
   fetchMonthlyAnalytics();
 }, []);
+
+useEffect(() => {
+  const fetchCategoryAnalytics = async () => {
+    try {
+      const response = await api.get("/dashboard/category-analytics");
+      setCategoryData(response.data.expense_categories || []);
+    } catch (error) {
+      setCategoryError(
+        error.response?.data?.message ||
+        "Unable to load expense breakdown."
+      );
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  fetchCategoryAnalytics();
+}, []);
+
   const summaryValues = {
     "Total Balance": summary?.balance ?? 0,
     "Monthly Income": summary?.monthly_income ?? 0,
@@ -144,7 +166,11 @@ useEffect(() => {
 ) : (
   <SpendingChart data={monthlyData} />
 )}
-        <CategoryChart />
+        <CategoryChart
+  data={categoryData}
+  loading={categoryLoading}
+  error={categoryError}
+/>
       </section>
 
       <section className="bottom-grid">
