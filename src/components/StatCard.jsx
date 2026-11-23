@@ -31,12 +31,14 @@ export default function StatCard({ stat }) {
       </h2>
 
       <div className="stat-footer">
-        <span className="stat-change">
-          <ArrowUpRight size={14} />
-          {stat.change}
-        </span>
-        <span className="stat-description">{stat.description}</span>
-      </div>
+  {stat.change && (
+    <span className="stat-change">
+      <ArrowUpRight size={14} />
+      {stat.change}
+    </span>
+  )}
+  <span className="stat-description">{stat.description}</span>
+</div>
     </div>
   );
 }
