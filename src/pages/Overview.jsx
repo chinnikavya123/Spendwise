@@ -2,11 +2,8 @@
 import {
   ArrowUpRight,
   ArrowRight,
-  ShoppingBag,
   Wallet,
-  Car,
-  Tv,
-  ShoppingBasket,
+  ShoppingBag,
   Sparkles,
   CalendarDays
 } from "lucide-react";
@@ -21,14 +18,6 @@ import CategoryChart from "../components/CategoryChart";
 import api from "../services/api";
 import { useAuth } from "../context/useAuth";
 
-const transactionIcons = {
-  "shopping-basket": ShoppingBasket,
-  wallet: Wallet,
-  car: Car,
-  tv: Tv,
-  "shopping-bag": ShoppingBag
-};
-
 export default function Overview() {
   const { user } = useAuth();
 
@@ -38,6 +27,9 @@ export default function Overview() {
   const [recentTransactions, setRecentTransactions] = useState([]);
 const [transactionsLoading, setTransactionsLoading] = useState(true);
 const [transactionsError, setTransactionsError] = useState("");
+const [monthlyData, setMonthlyData] = useState([]);
+const [monthlyLoading, setMonthlyLoading] = useState(true);
+const [monthlyError, setMonthlyError] = useState("");
   useEffect(() => {
     const fetchSummary = async () => {
       try {
@@ -73,7 +65,23 @@ const [transactionsError, setTransactionsError] = useState("");
 
   fetchRecentTransactions();
 }, []);
+useEffect(() => {
+  const fetchMonthlyAnalytics = async () => {
+    try {
+      const response = await api.get("/dashboard/monthly-analytics");
+      setMonthlyData(response.data.monthly_data);
+    } catch (error) {
+      setMonthlyError(
+        error.response?.data?.message ||
+        "Unable to load monthly analytics."
+      );
+    } finally {
+      setMonthlyLoading(false);
+    }
+  };
 
+  fetchMonthlyAnalytics();
+}, []);
   const summaryValues = {
     "Total Balance": summary?.balance ?? 0,
     "Monthly Income": summary?.monthly_income ?? 0,
@@ -125,7 +133,17 @@ const [transactionsError, setTransactionsError] = useState("");
       </section>
 
       <section className="charts-grid">
-        <SpendingChart />
+        {monthlyLoading ? (
+  <div className="chart-card">
+    <p>Loading cash flow data...</p>
+  </div>
+) : monthlyError ? (
+  <div className="chart-card">
+    <p>{monthlyError}</p>
+  </div>
+) : (
+  <SpendingChart data={monthlyData} />
+)}
         <CategoryChart />
       </section>
 

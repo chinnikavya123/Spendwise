@@ -22,39 +22,17 @@ import {
   MoreHorizontal
 } from "lucide-react";
 
-const initialTransactions = [
-  { id: 1, title: "Monthly Salary", category: "Salary", type: "income", amount: 65000, date: "2026-11-01", note: "Monthly salary credited" },
-  { id: 2, title: "Grocery Shopping", category: "Food", type: "expense", amount: 2450, date: "2026-11-03", note: "Weekly groceries" },
-  { id: 3, title: "Electricity Bill", category: "Bills", type: "expense", amount: 1800, date: "2026-11-05", note: "Monthly electricity bill" },
-  { id: 4, title: "Freelance Project", category: "Freelance", type: "income", amount: 8500, date: "2026-11-07", note: "Website development" },
-  { id: 5, title: "Online Shopping", category: "Shopping", type: "expense", amount: 3200, date: "2026-11-09", note: "Personal purchases" },
-  { id: 6, title: "Cab & Transport", category: "Transport", type: "expense", amount: 750, date: "2026-11-11", note: "Travel expenses" },
-  { id: 7, title: "Course Subscription", category: "Education", type: "expense", amount: 1200, date: "2026-11-12", note: "Online learning" },
-  { id: 8, title: "Investment Return", category: "Other", type: "income", amount: 2100, date: "2026-11-14", note: "Investment earnings" }
-];
-
-const categories = [
-  "Food",
-  "Shopping",
-  "Transport",
-  "Bills",
-  "Education",
-  "Health",
-  "Entertainment",
-  "Salary",
-  "Freelance",
-  "Other"
-];
+import api from "../services/api";
 
 const categoryIcons = {
-  Food: Utensils,
-  Shopping: ShoppingBag,
-  Transport: Car,
-  Bills: Home,
-  Education: GraduationCap,
-  Health: Heart,
-  Salary: Briefcase,
-  Freelance: CircleDollarSign
+  food: Utensils,
+  shopping: ShoppingBag,
+  transport: Car,
+  bills: Home,
+  education: GraduationCap,
+  health: Heart,
+  salary: Briefcase,
+  freelance: CircleDollarSign
 };
 
 const formatCurrency = (amount) =>
@@ -65,70 +43,185 @@ const formatCurrency = (amount) =>
   }).format(amount);
 
 const formatDate = (date) =>
-  new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  });
+  new Date(`${String(date).slice(0, 10)}T00:00:00`).toLocaleDateString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    }
+  );
+
+const getToday = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+const createEmptyForm = (categoryId = "") => ({
+  title: "",
+  category_id: categoryId ? String(categoryId) : "",
+  type: "expense",
+  amount: "",
+  date: getToday(),
+  payment_method: ""
+});
+
+const mapTransaction = (item) => ({
+  id: item.id,
+  category_id: item.category_id,
+  title: item.description || item.category_name,
+  category: item.category_name,
+  type: item.type,
+  amount: Number(item.amount),
+  date: String(item.transaction_date).slice(0, 10),
+  payment_method: item.payment_method || ""
+});
 
 export default function Transactions() {
-  const [transactions, setTransactions] = useState(() => {
-    try {
-      const saved = localStorage.getItem("spendwise_transactions");
-      return saved ? JSON.parse(saved) : initialTransactions;
-    } catch {
-      return initialTransactions;
-    }
-  });
+  const [transactions, setTransactions] = useState([]);
+  const [categories, setCategories] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(createEmptyForm());
 
-  const emptyForm = {
-    title: "",
-    category: "Food",
-    type: "expense",
-    amount: "",
-    date: new Date().toISOString().slice(0, 10),
-    note: ""
+  const fetchTransactions = async () => {
+    const firstResponse = await api.get("/transactions", {
+      params: {
+        page: 1,
+        limit: 100
+      }
+    });
+
+    const firstPage = firstResponse.data.transactions || [];
+    const totalPages = firstResponse.data.pagination?.totalPages || 1;
+
+    let allTransactions = [...firstPage];
+
+    if (totalPages > 1) {
+      const remainingPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          api.get("/transactions", {
+            params: {
+              page: index + 2,
+              limit: 100
+            }
+          })
+        )
+      );
+
+      remainingPages.forEach((response) => {
+        allTransactions.push(...(response.data.transactions || []));
+      });
+    }
+
+    setTransactions(allTransactions.map(mapTransaction));
   };
 
-  const [form, setForm] = useState(emptyForm);
-
   useEffect(() => {
-    localStorage.setItem(
-      "spendwise_transactions",
-      JSON.stringify(transactions)
-    );
-  }, [transactions]);
+  let isMounted = true;
+
+  const initializeData = async () => {
+    try {
+      const firstResponse = await api.get("/transactions", {
+        params: { page: 1, limit: 100 }
+      });
+
+      const firstPage = firstResponse.data.transactions || [];
+      const totalPages = firstResponse.data.pagination?.totalPages || 1;
+
+      let allTransactions = [...firstPage];
+
+      if (totalPages > 1) {
+        const remainingPages = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            api.get("/transactions", {
+              params: { page: index + 2, limit: 100 }
+            })
+          )
+        );
+
+        remainingPages.forEach((response) => {
+          allTransactions.push(...(response.data.transactions || []));
+        });
+      }
+
+      const categoryResponse = await api.get("/categories");
+      const categoryList = categoryResponse.data.categories || [];
+
+      if (!isMounted) return;
+
+      setTransactions(allTransactions.map(mapTransaction));
+      setCategories(categoryList);
+
+      setForm((previous) => ({
+        ...previous,
+        category_id:
+          previous.category_id ||
+          String(categoryList.find((item) => item.type === "expense")?.id || "")
+      }));
+    } catch (err) {
+      if (isMounted) {
+        setError(
+          err.response?.data?.message ||
+          "Unable to load your transactions. Please try again."
+        );
+      }
+    } finally {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }
+  };
+
+  initializeData();
+
+  return () => {
+    isMounted = false;
+  };
+}, []);
 
   const totals = useMemo(() => {
     const income = transactions
-      .filter((t) => t.type === "income")
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+      .filter((item) => item.type === "income")
+      .reduce((sum, item) => sum + item.amount, 0);
 
     const expenses = transactions
-      .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+      .filter((item) => item.type === "expense")
+      .reduce((sum, item) => sum + item.amount, 0);
 
-    return { income, expenses, balance: income - expenses };
+    return {
+      income,
+      expenses,
+      balance: income - expenses
+    };
   }, [transactions]);
 
   const filteredTransactions = useMemo(() => {
-    let result = transactions.filter((t) => {
+    const result = transactions.filter((item) => {
       const matchesSearch =
-        t.title.toLowerCase().includes(search.toLowerCase()) ||
-        t.category.toLowerCase().includes(search.toLowerCase());
+        item.title.toLowerCase().includes(search.toLowerCase()) ||
+        item.category.toLowerCase().includes(search.toLowerCase());
 
       const matchesType =
-        typeFilter === "all" || t.type === typeFilter;
+        typeFilter === "all" || item.type === typeFilter;
 
       const matchesCategory =
-        categoryFilter === "all" || t.category === categoryFilter;
+        categoryFilter === "all" ||
+        String(item.category_id) === categoryFilter;
 
       return matchesSearch && matchesType && matchesCategory;
     });
@@ -143,53 +236,109 @@ export default function Transactions() {
     return result;
   }, [transactions, search, typeFilter, categoryFilter, sortBy]);
 
+  const availableFormCategories = categories.filter(
+    (category) => category.type === form.type
+  );
+
   const openAddModal = () => {
+    const firstCategory = categories.find(
+      (category) => category.type === "expense"
+    );
+
     setEditingId(null);
-    setForm(emptyForm);
+    setForm(createEmptyForm(firstCategory?.id));
     setShowModal(true);
   };
 
   const openEditModal = (transaction) => {
     setEditingId(transaction.id);
+
     setForm({
       title: transaction.title,
-      category: transaction.category,
+      category_id: String(transaction.category_id),
       type: transaction.type,
       amount: transaction.amount,
       date: transaction.date,
-      note: transaction.note || ""
+      payment_method: transaction.payment_method || ""
     });
+
     setShowModal(true);
   };
 
-  const saveTransaction = (e) => {
-    e.preventDefault();
+  const handleTypeChange = (type) => {
+    const firstCategory = categories.find(
+      (category) => category.type === type
+    );
 
-    if (!form.title.trim() || Number(form.amount) <= 0) return;
-
-    if (editingId !== null) {
-      setTransactions((previous) =>
-        previous.map((t) =>
-          t.id === editingId
-            ? { ...form, amount: Number(form.amount), id: editingId }
-            : t
-        )
-      );
-    } else {
-      setTransactions((previous) => [
-        { ...form, amount: Number(form.amount), id: Date.now() },
-        ...previous
-      ]);
-    }
-
-    setShowModal(false);
-    setForm(emptyForm);
-    setEditingId(null);
+    setForm((previous) => ({
+      ...previous,
+      type,
+      category_id: String(firstCategory?.id || "")
+    }));
   };
 
-  const deleteTransaction = (id) => {
-    if (window.confirm("Are you sure you want to delete this transaction?")) {
-      setTransactions((previous) => previous.filter((t) => t.id !== id));
+  const saveTransaction = async (event) => {
+    event.preventDefault();
+
+    if (
+      !form.title.trim() ||
+      !form.category_id ||
+      Number(form.amount) <= 0
+    ) {
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    const payload = {
+      category_id: Number(form.category_id),
+      type: form.type,
+      amount: Number(form.amount),
+      description: form.title.trim(),
+      transaction_date: form.date,
+      payment_method: form.payment_method.trim() || null
+    };
+
+    try {
+      if (editingId !== null) {
+        await api.put(`/transactions/${editingId}`, payload);
+      } else {
+        await api.post("/transactions", payload);
+      }
+
+      await fetchTransactions();
+
+      setShowModal(false);
+      setEditingId(null);
+      setForm(createEmptyForm(categories.find(
+        (item) => item.type === "expense"
+      )?.id));
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Unable to save the transaction. Please try again."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteTransaction = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this transaction?")) {
+      return;
+    }
+
+    setError("");
+
+    try {
+      await api.delete(`/transactions/${id}`);
+      await fetchTransactions();
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Unable to delete the transaction."
+      );
     }
   };
 
@@ -208,11 +357,19 @@ export default function Transactions() {
         </button>
       </div>
 
+      {error && (
+        <div className="form-error">
+          {error}
+        </div>
+      )}
+
       <div className="transaction-summary">
         <div className="transaction-stat">
           <div className="transaction-stat-top">
             <span>Total Income</span>
-            <div className="summary-icon income-bg"><ArrowDownRight size={19} /></div>
+            <div className="summary-icon income-bg">
+              <ArrowDownRight size={19} />
+            </div>
           </div>
           <h2>{formatCurrency(totals.income)}</h2>
           <span className="summary-caption">All recorded income</span>
@@ -221,7 +378,9 @@ export default function Transactions() {
         <div className="transaction-stat">
           <div className="transaction-stat-top">
             <span>Total Expenses</span>
-            <div className="summary-icon expense-bg"><ArrowUpRight size={19} /></div>
+            <div className="summary-icon expense-bg">
+              <ArrowUpRight size={19} />
+            </div>
           </div>
           <h2>{formatCurrency(totals.expenses)}</h2>
           <span className="summary-caption">All recorded expenses</span>
@@ -230,7 +389,9 @@ export default function Transactions() {
         <div className="transaction-stat">
           <div className="transaction-stat-top">
             <span>Net Balance</span>
-            <div className="summary-icon balance-bg"><Wallet size={19} /></div>
+            <div className="summary-icon balance-bg">
+              <Wallet size={19} />
+            </div>
           </div>
           <h2>{formatCurrency(totals.balance)}</h2>
           <span className="summary-caption">Income minus expenses</span>
@@ -239,7 +400,9 @@ export default function Transactions() {
         <div className="transaction-stat">
           <div className="transaction-stat-top">
             <span>Transactions</span>
-            <div className="summary-icon count-bg"><ArrowUpDown size={19} /></div>
+            <div className="summary-icon count-bg">
+              <ArrowUpDown size={19} />
+            </div>
           </div>
           <h2>{transactions.length}</h2>
           <span className="summary-caption">Total recorded entries</span>
@@ -252,6 +415,7 @@ export default function Transactions() {
             <h3>All Transactions</h3>
             <p>View and manage your financial activity</p>
           </div>
+
           <span className="transaction-count">
             {filteredTransactions.length} entries
           </span>
@@ -264,8 +428,9 @@ export default function Transactions() {
               type="text"
               placeholder="Search transactions..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
             />
+
             {search && (
               <button onClick={() => setSearch("")}>
                 <X size={15} />
@@ -278,7 +443,7 @@ export default function Transactions() {
               <Filter size={15} />
               <select
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
+                onChange={(event) => setTypeFilter(event.target.value)}
               >
                 <option value="all">All Types</option>
                 <option value="income">Income</option>
@@ -289,18 +454,20 @@ export default function Transactions() {
             <select
               className="category-filter"
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              onChange={(event) => setCategoryFilter(event.target.value)}
             >
               <option value="all">All Categories</option>
               {categories.map((category) => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category.id} value={String(category.id)}>
+                  {category.name}
+                </option>
               ))}
             </select>
 
             <select
               className="category-filter"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(event) => setSortBy(event.target.value)}
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -324,8 +491,10 @@ export default function Transactions() {
             </thead>
 
             <tbody>
-              {filteredTransactions.map((transaction) => {
-                const Icon = categoryIcons[transaction.category] || MoreHorizontal;
+              {!loading && filteredTransactions.map((transaction) => {
+                const Icon =
+                  categoryIcons[transaction.category.toLowerCase()] ||
+                  MoreHorizontal;
 
                 return (
                   <tr key={transaction.id}>
@@ -334,14 +503,22 @@ export default function Transactions() {
                         <div className={`table-category-icon ${transaction.type}`}>
                           <Icon size={18} />
                         </div>
+
                         <div>
                           <strong>{transaction.title}</strong>
-                          <span>{transaction.note || "No description"}</span>
+                          <span>
+                            {transaction.payment_method || "No payment method"}
+                          </span>
                         </div>
                       </div>
                     </td>
 
-                    <td><span className="category-pill">{transaction.category}</span></td>
+                    <td>
+                      <span className="category-pill">
+                        {transaction.category}
+                      </span>
+                    </td>
+
                     <td>{formatDate(transaction.date)}</td>
 
                     <td>
@@ -359,9 +536,13 @@ export default function Transactions() {
 
                     <td>
                       <div className="table-actions">
-                        <button title="Edit" onClick={() => openEditModal(transaction)}>
+                        <button
+                          title="Edit"
+                          onClick={() => openEditModal(transaction)}
+                        >
                           <Pencil size={15} />
                         </button>
+
                         <button
                           title="Delete"
                           className="delete-action"
@@ -377,26 +558,46 @@ export default function Transactions() {
             </tbody>
           </table>
 
-          {filteredTransactions.length === 0 && (
+          {loading ? (
+            <div className="empty-transactions">
+              <p>Loading your transactions...</p>
+            </div>
+          ) : filteredTransactions.length === 0 ? (
             <div className="empty-transactions">
               <Search size={28} />
-              <h3>No transactions found</h3>
-              <p>Try changing your search or filters.</p>
+              <h3>
+                {transactions.length === 0
+                  ? "No transactions yet"
+                  : "No transactions found"}
+              </h3>
+              <p>
+                {transactions.length === 0
+                  ? "Add your first transaction to start tracking your money."
+                  : "Try changing your search or filters."}
+              </p>
             </div>
-          )}
+          ) : null}
         </div>
       </section>
 
       {showModal && (
-        <div className="transaction-modal-overlay" onMouseDown={(e) => {
-          if (e.target === e.currentTarget) setShowModal(false);
-        }}>
+        <div
+          className="transaction-modal-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowModal(false);
+            }
+          }}
+        >
           <form className="transaction-modal" onSubmit={saveTransaction}>
             <div className="modal-heading">
               <div>
-                <h2>{editingId !== null ? "Edit Transaction" : "Add Transaction"}</h2>
+                <h2>
+                  {editingId !== null ? "Edit Transaction" : "Add Transaction"}
+                </h2>
                 <p>Enter the details of your financial activity.</p>
               </div>
+
               <button type="button" onClick={() => setShowModal(false)}>
                 <X size={20} />
               </button>
@@ -405,16 +606,24 @@ export default function Transactions() {
             <div className="transaction-type-toggle">
               <button
                 type="button"
-                className={form.type === "expense" ? "selected expense-selected" : ""}
-                onClick={() => setForm({ ...form, type: "expense" })}
+                className={
+                  form.type === "expense"
+                    ? "selected expense-selected"
+                    : ""
+                }
+                onClick={() => handleTypeChange("expense")}
               >
                 <ArrowUpRight size={17} /> Expense
               </button>
 
               <button
                 type="button"
-                className={form.type === "income" ? "selected income-selected" : ""}
-                onClick={() => setForm({ ...form, type: "income" })}
+                className={
+                  form.type === "income"
+                    ? "selected income-selected"
+                    : ""
+                }
+                onClick={() => handleTypeChange("income")}
               >
                 <ArrowDownRight size={17} /> Income
               </button>
@@ -424,10 +633,12 @@ export default function Transactions() {
               Transaction Name
               <input
                 required
-                maxLength={60}
+                maxLength={255}
                 placeholder="e.g. Grocery shopping"
                 value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, title: event.target.value })
+                }
               />
             </label>
 
@@ -436,11 +647,14 @@ export default function Transactions() {
               <input
                 required
                 type="number"
-                min="1"
+                min="0.01"
+                max="9999999999.99"
                 step="0.01"
                 placeholder="Enter amount"
                 value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, amount: event.target.value })
+                }
               />
             </label>
 
@@ -448,11 +662,20 @@ export default function Transactions() {
               <label className="transaction-form-label">
                 Category
                 <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  required
+                  value={form.category_id}
+                  onChange={(event) =>
+                    setForm({ ...form, category_id: event.target.value })
+                  }
                 >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>{category}</option>
+                  <option value="" disabled>
+                    Select category
+                  </option>
+
+                  {availableFormCategories.map((category) => (
+                    <option key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -463,19 +686,25 @@ export default function Transactions() {
                   required
                   type="date"
                   value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, date: event.target.value })
+                  }
                 />
               </label>
             </div>
 
             <label className="transaction-form-label">
-              Note (Optional)
-              <textarea
-                rows="3"
-                maxLength={150}
-                placeholder="Add a short description..."
-                value={form.note}
-                onChange={(e) => setForm({ ...form, note: e.target.value })}
+              Payment Method (Optional)
+              <input
+                maxLength={50}
+                placeholder="e.g. UPI, Cash, Card"
+                value={form.payment_method}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    payment_method: event.target.value
+                  })
+                }
               />
             </label>
 
@@ -487,8 +716,17 @@ export default function Transactions() {
               >
                 Cancel
               </button>
-              <button type="submit" className="save-transaction-btn">
-                {editingId !== null ? "Save Changes" : "Add Transaction"}
+
+              <button
+                type="submit"
+                className="save-transaction-btn"
+                disabled={saving}
+              >
+                {saving
+                  ? "Saving..."
+                  : editingId !== null
+                    ? "Save Changes"
+                    : "Add Transaction"}
               </button>
             </div>
           </form>
