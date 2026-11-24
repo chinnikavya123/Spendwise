@@ -14,6 +14,7 @@ import Transactions from "./pages/Transactions";
 import Analytics from "./pages/Analytics";
 import Budgets from "./pages/Budgets";
 import Goals from "./pages/Goals";
+import Reports from "./pages/Reports";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 
@@ -27,6 +28,7 @@ const pageNames = {
   "/analytics": "Analytics",
   "/budgets": "Budgets",
   "/goals": "Savings Goals",
+  "/reports": "Reports",
   "/smart-insights": "Smart Insights",
   "/settings": "Settings"
 };
@@ -102,6 +104,7 @@ function App() {
 
             <Route path="/budgets" element={<Budgets />} />
             <Route path="/goals" element={<Goals />} />
+            <Route path="/reports" element={<Reports />} />
             <Route
               path="/smart-insights"
               element={<ComingSoon title="Smart Insights" />}

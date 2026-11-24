@@ -1,10 +1,10 @@
 
 import { NavLink } from "react-router-dom";
-
 import {
   LayoutDashboard,
   ArrowLeftRight,
   ChartNoAxesCombined,
+  FileText,
   Wallet,
   PiggyBank,
   BrainCircuit,
@@ -18,6 +18,7 @@ const navigation = [
   { name: "Overview", path: "/", icon: LayoutDashboard },
   { name: "Transactions", path: "/transactions", icon: ArrowLeftRight },
   { name: "Analytics", path: "/analytics", icon: ChartNoAxesCombined },
+  { name: "Reports", path: "/reports", icon: FileText },
   { name: "Budgets", path: "/budgets", icon: Wallet },
   { name: "Savings Goals", path: "/goals", icon: PiggyBank },
   { name: "Smart Insights", path: "/smart-insights", icon: BrainCircuit }
