@@ -427,10 +427,41 @@ Some ideas for extending SpendWise further:
 
 ---
 
-## 👩‍💻 Project Links & Owner
+## 💡 Why SpendWise?
 
-**🌐 Live Demo:** [SpendWise – Personal Finance Management](https://spendwise-chinnikavya.vercel.app/)
+SpendWise is more than just an expense tracker. It brings income and expense management, budget planning, savings goals, and financial analytics together in one platform.
 
-**📂 GitHub Repository:** [SpendWise Repository](https://github.com/chinnikavya123/Spendwise)
+By providing a centralized view of financial activities, it helps users understand their spending habits, monitor their budgets, track savings progress, and make more informed financial decisions.
 
-**👩‍💻 Owner:** Chinni Kavya Sri
+The goal is to make personal finance management simpler, more organized, and accessible.
+
+---
+
+## 👩‍💻 Author
+
+**Chinni Kavya Sri**
+
+🎓 B.Tech – Computer Science and Engineering  
+🏛️ VIT-AP University  
+💡 Specialization: Artificial Intelligence and Machine Learning
+
+---
+
+## 🔗 Project Links
+
+**🌐 Live Website:** [SpendWise – Personal Finance Management](https://spendwise-chinnikavya.vercel.app/)
+
+**📂 GitHub Repository:** [SpendWise](https://github.com/chinnikavya123/Spendwise)
+
+**👩‍💻 GitHub Profile:** [@chinnikavya123](https://github.com/chinnikavya123)
+
+---
+
+⭐ If you find SpendWise useful, consider giving this repository a star!
+
+**💰 Track. Manage. Save. Grow with SpendWise!**
+
+---
+
+Made with ❤️ by [**Chinni Kavya Sri**](https://github.com/chinnikavya123)  
+👩‍💻 Owner & Developer of SpendWise
