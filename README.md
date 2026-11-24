@@ -1,42 +1,24 @@
 # 💰 SpendWise – Personal Finance Management Application
 
-<p align="center">
-  <img src="https://img.shields.io/badge/SpendWise-Personal%20Finance-16A34A?style=for-the-badge&logo=money&logoColor=white" alt="SpendWise"/>
-  <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
-  <img src="https://img.shields.io/badge/Node.js-Backend-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js"/>
-  <img src="https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL"/>
-</p>
-
-<p align="center">
-  <b>Take control of your money. Track your spending. Build better financial habits. 🚀</b>
-</p>
-
-<p align="center">
-  <a href="https://spendwise-chinnikavya.vercel.app/">
-    <img src="https://img.shields.io/badge/🌐_Live_Demo-Visit_SpendWise-16A34A?style=for-the-badge" alt="Live Demo"/>
-  </a>
-  <a href="https://github.com/chinnikavya123/Spendwise">
-    <img src="https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github" alt="GitHub"/>
-  </a>
-</p>
+**Take control of your money. Track your spending. Build better financial habits. 🚀**
 
 ---
 
 ## 📌 Table of Contents
 
-- [🌟 About the Project](#-about-the-project)
-- [✨ Features](#-features)
-- [🛠️ Tech Stack](#️-tech-stack)
-- [📊 Application Modules](#-application-modules)
-- [🏗️ Project Architecture](#️-project-architecture)
-- [⚙️ Getting Started](#️-getting-started)
-- [🔐 Environment Variables](#-environment-variables)
-- [🗄️ Database Structure](#️-database-structure)
-- [🔗 API Overview](#-api-overview)
-- [🚀 Deployment](#-deployment)
-- [🔒 Security](#-security)
-- [🎯 Future Enhancements](#-future-enhancements)
-- [👩‍💻 Author](#-author)
+1. 🌟 About the Project
+2. ✨ Features
+3. 🛠️ Tech Stack
+4. 📊 Application Modules
+5. 🏗️ Project Architecture
+6. ⚙️ Getting Started
+7. 🔐 Environment Variables
+8. 🗄️ Database Structure
+9. 🔗 API Overview
+10. 🚀 Deployment
+11. 🔒 Security
+12. 🎯 Future Enhancements
+13. 👩‍💻 Project Links & Owner
 
 ---
 
@@ -52,7 +34,7 @@ Instead of managing finances manually, users can use SpendWise to keep their fin
 
 - 💵 Track income and expenses in one place.
 - 📂 Organize transactions using customizable categories.
-- 📊 Understand spending patterns through interactive charts.
+- 📊 Understand spending patterns through visual analytics.
 - 🎯 Set budgets and monitor spending limits.
 - 🏦 Create and track personal savings goals.
 - 📄 Generate financial reports and export transaction data.
@@ -61,6 +43,7 @@ Instead of managing finances manually, users can use SpendWise to keep their fin
 ## ✨ Features
 
 ### 🔐 1. User Authentication
+
 - User registration and login.
 - Secure password hashing.
 - JWT-based authentication.
@@ -69,6 +52,7 @@ Instead of managing finances manually, users can use SpendWise to keep their fin
 - User-specific financial records.
 
 ### 📊 2. Dashboard Overview
+
 - View a summary of financial activities.
 - Monitor income and expenses.
 - Track financial balance.
@@ -77,6 +61,7 @@ Instead of managing finances manually, users can use SpendWise to keep their fin
 - Access important financial information from one dashboard.
 
 ### 💳 3. Transaction Management
+
 - Add new income and expense transactions.
 - Edit existing transactions.
 - Delete transactions.
@@ -86,6 +71,7 @@ Instead of managing finances manually, users can use SpendWise to keep their fin
 - Filter transactions by date, type, and category.
 
 ### 🏷️ 4. Category Management
+
 - Separate income and expense categories.
 - Use predefined default categories.
 - Create custom categories.
@@ -94,6 +80,7 @@ Instead of managing finances manually, users can use SpendWise to keep their fin
 - Organize financial records more effectively.
 
 ### 🎯 5. Budget Management
+
 - Create monthly budgets.
 - Assign budgets to expense categories.
 - Update budget amounts.
@@ -102,6 +89,7 @@ Instead of managing finances manually, users can use SpendWise to keep their fin
 - Track budget utilization.
 
 ### 🏦 6. Savings Goals
+
 - Create personal savings goals.
 - Set target amounts.
 - Record current savings progress.
@@ -110,12 +98,14 @@ Instead of managing finances manually, users can use SpendWise to keep their fin
 - Monitor progress toward financial targets.
 
 ### 📈 7. Analytics
+
 - Visualize income and expense patterns.
 - Analyze monthly financial activity.
 - Explore category-wise spending.
 - Understand financial trends through charts.
 
 ### 📄 8. Reports and CSV Export
+
 - View financial reports.
 - Filter transaction records.
 - Export transaction data into CSV format.
@@ -162,7 +152,7 @@ SpendWise is developed using a modern full-stack architecture.
 | GitHub | Source code management |
 | Vercel | Frontend deployment |
 | Render | Backend deployment |
-| TiDB Cloud | Cloud-hosted MySQL-compatible database |
+| TiDB Cloud | MySQL-compatible cloud database |
 | Postman | API testing |
 | VS Code | Development environment |
 
@@ -397,17 +387,13 @@ The backend exposes REST API endpoints for application functionality.
 
 SpendWise is deployed using cloud-based services.
 
-### 🌐 Live Application
+### 🌐 Frontend
 
-**Frontend – Vercel**
+**Vercel** – Frontend hosting and deployment.
 
-[https://spendwise-chinnikavya.vercel.app/](https://spendwise-chinnikavya.vercel.app/)
+### ⚙️ Backend
 
-### ⚙️ Backend API
-
-**Backend – Render**
-
-[https://spendwise-backend-qy21.onrender.com](https://spendwise-backend-qy21.onrender.com)
+**Render** – Backend hosting and API deployment.
 
 ### 🗄️ Database
 
@@ -441,27 +427,10 @@ Some ideas for extending SpendWise further:
 
 ---
 
-## 👩‍💻 Author
+## 👩‍💻 Project Links & Owner
 
-**Developed with ❤️ using React, Node.js, Express.js and MySQL.**
+**🌐 Live Demo:** [SpendWise – Personal Finance Management](https://spendwise-chinnikavya.vercel.app/)
 
-### 🔗 Connect and Explore
+**📂 GitHub Repository:** [SpendWise Repository](https://github.com/chinnikavya123/Spendwise)
 
-<p align="center">
-  <a href="https://github.com/chinnikavya123">
-    <img src="https://img.shields.io/badge/GitHub-Profile-181717?style=for-the-badge&logo=github" alt="GitHub Profile"/>
-  </a>
-  <a href="https://github.com/chinnikavya123/Spendwise">
-    <img src="https://img.shields.io/badge/Project-SpendWise-16A34A?style=for-the-badge&logo=github" alt="SpendWise Repository"/>
-  </a>
-</p>
-
----
-
-<p align="center">
-  ⭐ If you find SpendWise interesting, consider giving this repository a star!
-</p>
-
-<p align="center">
-  <b>💰 Spend Smart. Save Better. Live Better. 🚀</b>
-</p>
+**👩‍💻 Owner:** Chinni Kavya Sri
