@@ -3777,3 +3777,66 @@
     padding: 16px;
   }
 }
+
+
+/* Reports Filter Button Styling */
+.reports-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.reports-filter-actions button {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reports-filter-actions .primary-button {
+  background: #5b5ce2;
+  color: #ffffff;
+  border: 1px solid #5b5ce2;
+  box-shadow: 0 3px 8px rgba(91, 92, 226, 0.18);
+}
+
+.reports-filter-actions .primary-button:hover:not(:disabled) {
+  background: #4849c9;
+  border-color: #4849c9;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(91, 92, 226, 0.24);
+}
+
+.reports-filter-actions .secondary-button {
+  background: #ffffff;
+  color: #596579;
+  border: 1px solid #dce2ea;
+}
+
+.reports-filter-actions .secondary-button:hover:not(:disabled) {
+  background: #f5f7fb;
+  border-color: #bfc9d8;
+  color: #303c50;
+}
+
+.reports-filter-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 600px) {
+  .reports-filter-actions button {
+    flex: 1;
+    padding: 0 14px;
+  }
+}
