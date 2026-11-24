@@ -51,12 +51,13 @@ export default function Reports() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [exporting, setExporting] = useState(false);
+const [exportError, setExportError] = useState("");
+const [exporting, setExporting] = useState(false);
 
   const fetchReport = async (filters = {}) => {
     try {
       setLoading(true);
-      setError("");
+      setExportError("");
 
       const response = await api.get("/reports/transactions", {
         params: filters
@@ -137,7 +138,7 @@ export default function Reports() {
   const handleExportCSV = async () => {
   try {
     setExporting(true);
-    setError("");
+    setExportError("");
 
     const response = await api.get("/reports/export/csv", {
       responseType: "blob"
@@ -159,7 +160,7 @@ export default function Reports() {
 
     window.URL.revokeObjectURL(url);
   } catch {
-  setError("Unable to export transactions. Please try again.");
+  setExportError("Unable to export transactions. Please try again.");
 }finally {
     setExporting(false);
   }
@@ -222,7 +223,11 @@ export default function Reports() {
               <div>
                 <p>{card.title}</p>
                 <h2>
-                  {loading ? "Loading..." : card.value}
+                  {loading
+  ? "Loading..."
+  : error
+    ? "Unavailable"
+    : card.value}
                 </h2>
               </div>
             </div>
@@ -319,7 +324,13 @@ export default function Reports() {
   <Download size={16} />
   {exporting ? "Exporting..." : "Export All Transactions"}
 </button>
-        </div>
+                </div>
+
+        {exportError && (
+          <div className="reports-error">
+            {exportError}
+          </div>
+        )}
       </div>
 
       <div className="reports-table-card">
@@ -357,7 +368,19 @@ export default function Reports() {
                     Loading transactions...
                   </td>
                 </tr>
-              ) : transactions.length === 0 ? (
+              ) : error ? (
+  <tr>
+    <td colSpan="6" className="reports-empty">
+      Unable to load transactions. Please try again.
+    </td>
+  </tr>
+) : error ? (
+  <tr>
+    <td colSpan="6" className="reports-empty">
+      Unable to load transactions. Please try again.
+    </td>
+  </tr>
+) : transactions.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="reports-empty">
                     No transactions found for the selected filters.
