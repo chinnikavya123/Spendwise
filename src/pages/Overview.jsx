@@ -137,6 +137,106 @@ useEffect(() => {
   fetchBudgets();
 }, [currentMonth]);
 
+const currentMonthAnalytics = monthlyData.find(
+  (item) => item.month === currentMonth
+);
+
+const previousMonthDate = new Date(
+  currentDate.getFullYear(),
+  currentDate.getMonth() - 1,
+  1
+);
+
+const previousMonthKey = `${previousMonthDate.getFullYear()}-${String(
+  previousMonthDate.getMonth() + 1
+).padStart(2, "0")}`;
+
+const previousMonthAnalytics = monthlyData.find(
+  (item) => item.month === previousMonthKey
+);
+
+const currentMonthExpenses = Number(
+  currentMonthAnalytics?.expenses || 0
+);
+
+const previousMonthExpenses = Number(
+  previousMonthAnalytics?.expenses || 0
+);
+
+const daysElapsed = currentDate.getDate();
+
+const previousMonthDays = new Date(
+  previousMonthDate.getFullYear(),
+  previousMonthDate.getMonth() + 1,
+  0
+).getDate();
+
+const currentDailySpending = currentMonthExpenses / daysElapsed;
+
+const previousDailySpending =
+  previousMonthExpenses / previousMonthDays;
+
+const spendingDifference =
+  previousDailySpending - currentDailySpending;
+
+const spendingChangePercentage =
+  previousDailySpending > 0
+    ? Math.abs(
+        (spendingDifference / previousDailySpending) * 100
+      )
+    : 0;
+
+const formatInsightAmount = (amount) =>
+  `₹${Math.round(amount).toLocaleString("en-IN")}`;
+
+let insight;
+
+if (previousMonthExpenses === 0 && currentMonthExpenses === 0) {
+  insight = {
+    title: "Start tracking your spending!",
+    message:
+      "Add your expenses to receive personalized insights about your spending habits.",
+    amount: "No spending data yet",
+    label: "Your financial insights will appear here."
+  };
+} else if (previousMonthExpenses === 0) {
+  insight = {
+    title: "Your spending journey has started!",
+    message:
+      "Continue recording your transactions. Once you have previous month data, we can compare your spending habits.",
+    amount: formatInsightAmount(currentMonthExpenses),
+    label: "Expenses recorded this month"
+  };
+} else if (spendingDifference > 0.01) {
+  insight = {
+    title: "Great progress with your spending!",
+    message:
+      `Your average daily spending is ${spendingChangePercentage.toFixed(1)}% lower than last month's daily average.`,
+    amount: formatInsightAmount(
+      spendingDifference * daysElapsed
+    ),
+    label: "Estimated lower spending at your current rate"
+  };
+} else if (spendingDifference < -0.01) {
+  insight = {
+    title: "Keep an eye on your spending!",
+    message:
+      `Your average daily spending is ${spendingChangePercentage.toFixed(1)}% higher than last month's daily average.`,
+    amount: formatInsightAmount(
+      Math.abs(spendingDifference) * daysElapsed
+    ),
+    label: "Estimated additional spending at your current rate"
+  };
+} else {
+  insight = {
+    title: "Your spending is consistent!",
+    message:
+      "Your average daily spending is almost the same as last month's daily average. Keep maintaining your habits.",
+    amount: formatInsightAmount(currentDailySpending),
+    label: "Average daily spending"
+  };
+}
+
   const summaryValues = {
     "Total Balance": summary?.balance ?? 0,
     "Monthly Income": summary?.monthly_income ?? 0,
@@ -266,49 +366,50 @@ useEffect(() => {
         </div>
 
         <div className="insight-card">
-          <div className="insight-header">
-            <div className="insight-icon">
-              <Sparkles size={19} />
-            </div>
-            <span>SMART INSIGHT</span>
-          </div>
-
-          <h3>You're building better habits!</h3>
-
-          <p>
-            Your expenses are 5.4% lower than last month.
-            Keep tracking your spending to understand where
-            you can save even more.
-          </p>
-
-          <div className="insight-highlight">
-            <ArrowUpRight size={20} />
-            <div>
-              <strong>₹1,050</strong>
-              <span>Illustrative reduction in spending</span>
-            </div>
-          </div>
-
-          <button className="insight-button">
-            Explore insights <ArrowRight size={15} />
-          </button>
-        </div>
-      </section>
-
-      <section className="budget-section">
-  <div className="section-heading">
-    <div>
-      <h3>Budget Progress</h3>
-      <p>Keep your monthly spending on track</p>
+  <div className="insight-header">
+    <div className="insight-icon">
+      <Sparkles size={19} />
     </div>
-
-    <button
-      className="text-button"
-      onClick={() => window.location.href = "/budgets"}
-    >
-      Manage budgets <ArrowRight size={15} />
-    </button>
+    <span>SMART INSIGHT</span>
   </div>
+
+  <h3>
+    {monthlyLoading
+      ? "Analyzing your spending..."
+      : monthlyError
+        ? "Insights unavailable"
+        : insight.title}
+  </h3>
+
+  <p>
+    {monthlyLoading
+      ? "We're reviewing your recent transactions to find useful patterns."
+      : monthlyError || insight.message}
+  </p>
+
+  <div className="insight-highlight">
+    <ArrowUpRight size={20} />
+    <div>
+      <strong>
+        {monthlyLoading || monthlyError ? "—" : insight.amount}
+      </strong>
+      <span>
+        {monthlyLoading
+          ? "Calculating your insights"
+          : monthlyError
+            ? "Please try again later."
+            : insight.label}
+      </span>
+    </div>
+  </div>
+
+  <button
+    className="insight-button"
+    onClick={() => window.location.href = "/analytics"}
+  >
+    Explore analytics <ArrowRight size={15} />
+  </button>
+</div>
 
   <div className="budget-grid">
     {budgetsLoading ? (
