@@ -16,6 +16,7 @@ import Budgets from "./pages/Budgets";
 import Goals from "./pages/Goals";
 import Reports from "./pages/Reports";
 import SmartInsights from "./pages/SmartInsights";
+import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 
@@ -33,19 +34,6 @@ const pageNames = {
   "/smart-insights": "Smart Insights",
   "/settings": "Settings"
 };
-
-function ComingSoon({ title }) {
-  return (
-    <div className="coming-soon">
-      <div className="coming-icon">✦</div>
-      <h2>{title}</h2>
-      <p>
-        We're building something useful here.
-        Stay tuned for upcoming features!
-      </p>
-    </div>
-  );
-}
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -111,10 +99,7 @@ function App() {
   element={<SmartInsights />}
 />
 
-            <Route
-              path="/settings"
-              element={<ComingSoon title="Settings" />}
-            />
+            <Route path="/settings" element={<Settings />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
