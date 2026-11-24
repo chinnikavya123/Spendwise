@@ -17,14 +17,25 @@ import {
 import api from "../services/api";
 
 const formatCurrency = (value) =>
-  `₹${Number(value || 0).toLocaleString("en-IN", {
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
     maximumFractionDigits: 2
-  })}`;
+  }).format(Number(value || 0));
 
 const formatDate = (date) => {
   if (!date) return "No target date";
 
-  const parsedDate = new Date(`${date.slice(0, 10)}T00:00:00`);
+  const dateString = String(date).slice(0, 10);
+  const [year, month, day] = dateString.split("-").map(Number);
+
+  if (!year || !month || !day) return "No target date";
+
+  const parsedDate = new Date(year, month - 1, day);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "No target date";
+  }
 
   return parsedDate.toLocaleDateString("en-IN", {
     day: "numeric",
@@ -47,6 +58,7 @@ const Goals = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -75,7 +87,7 @@ const Goals = () => {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Unable to load savings goals."
+        "Unable to load savings goals. Please try again."
       );
     } finally {
       setLoading(false);
@@ -86,9 +98,7 @@ const Goals = () => {
     Promise.resolve().then(() => fetchGoals());
   }, [fetchGoals]);
 
-  const openAddModal = () => {
-    setEditingId(null);
-
+  const resetForm = () => {
     setFormData({
       name: "",
       description: "",
@@ -96,7 +106,11 @@ const Goals = () => {
       current_amount: "0",
       target_date: ""
     });
+  };
 
+  const openAddModal = () => {
+    setEditingId(null);
+    resetForm();
     setError("");
     setShowModal(true);
   };
@@ -116,6 +130,14 @@ const Goals = () => {
 
     setError("");
     setShowModal(true);
+  };
+
+  const closeModal = () => {
+    if (saving) return;
+
+    setShowModal(false);
+    setEditingId(null);
+    setError("");
   };
 
   const handleInputChange = (event) => {
@@ -173,12 +195,13 @@ const Goals = () => {
 
       setShowModal(false);
       setEditingId(null);
+      resetForm();
 
       await fetchGoals();
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Unable to save savings goal."
+        "Unable to save savings goal. Please try again."
       );
     } finally {
       setSaving(false);
@@ -193,6 +216,7 @@ const Goals = () => {
     if (!confirmed) return;
 
     try {
+      setDeletingId(goal.id);
       setError("");
 
       await api.delete(`/savings-goals/${goal.id}`);
@@ -201,10 +225,43 @@ const Goals = () => {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Unable to delete savings goal."
+        "Unable to delete savings goal. Please try again."
       );
+    } finally {
+      setDeletingId(null);
     }
   };
+
+  const summaryCards = [
+    {
+      title: "Total Goals",
+      value: summary.total_goals,
+      description: "Financial goals created",
+      icon: Target,
+      color: "goals-purple"
+    },
+    {
+      title: "Total Target",
+      value: formatCurrency(summary.total_target),
+      description: "Your savings target",
+      icon: Wallet,
+      color: "goals-blue"
+    },
+    {
+      title: "Total Saved",
+      value: formatCurrency(summary.total_saved),
+      description: "Amount saved so far",
+      icon: TrendingUp,
+      color: "goals-green"
+    },
+    {
+      title: "Still to Save",
+      value: formatCurrency(summary.total_remaining),
+      description: "Remaining savings target",
+      icon: PiggyBank,
+      color: "goals-orange"
+    }
+  ];
 
   return (
     <div className="goals-page">
@@ -216,14 +273,18 @@ const Goals = () => {
           </p>
         </div>
 
-        <button className="goals-add-button" onClick={openAddModal}>
+        <button
+          className="goals-add-button"
+          onClick={openAddModal}
+          disabled={loading}
+        >
           <Plus size={17} />
           Add New Goal
         </button>
       </div>
 
       {error && (
-        <div className="goals-error">
+        <div className="goals-error" role="alert">
           <AlertTriangle size={16} />
           <span>{error}</span>
           <button
@@ -236,41 +297,25 @@ const Goals = () => {
       )}
 
       <div className="goals-summary-grid">
-        <div className="goals-summary-card">
-          <div className="goals-summary-icon goals-purple">
-            <Target size={21} />
-          </div>
-          <p>Total Goals</p>
-          <h2>{summary.total_goals}</h2>
-          <span>Financial goals created</span>
-        </div>
+        {summaryCards.map((card) => {
+          const Icon = card.icon;
 
-        <div className="goals-summary-card">
-          <div className="goals-summary-icon goals-blue">
-            <Wallet size={21} />
-          </div>
-          <p>Total Target</p>
-          <h2>{formatCurrency(summary.total_target)}</h2>
-          <span>Your savings target</span>
-        </div>
+          return (
+            <div className="goals-summary-card" key={card.title}>
+              <div className={`goals-summary-icon ${card.color}`}>
+                <Icon size={21} />
+              </div>
 
-        <div className="goals-summary-card">
-          <div className="goals-summary-icon goals-green">
-            <TrendingUp size={21} />
-          </div>
-          <p>Total Saved</p>
-          <h2>{formatCurrency(summary.total_saved)}</h2>
-          <span>Amount saved so far</span>
-        </div>
-
-        <div className="goals-summary-card">
-          <div className="goals-summary-icon goals-orange">
-            <PiggyBank size={21} />
-          </div>
-          <p>Still to Save</p>
-          <h2>{formatCurrency(summary.total_remaining)}</h2>
-          <span>Remaining savings target</span>
-        </div>
+              <div>
+                <p>{card.title}</p>
+                <h2>
+                  {loading ? "Loading..." : card.value}
+                </h2>
+                <span>{card.description}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="goals-section">
@@ -314,6 +359,10 @@ const Goals = () => {
                 goal.percentage_completed || 0
               );
 
+              const safePercentage = Number.isFinite(percentage)
+                ? Math.min(Math.max(percentage, 0), 100)
+                : 0;
+
               const completed = goal.status === "Completed";
 
               return (
@@ -332,6 +381,7 @@ const Goals = () => {
                         onClick={() => openEditModal(goal)}
                         aria-label={`Edit ${goal.name}`}
                         title="Edit goal"
+                        disabled={saving || deletingId !== null}
                       >
                         <Pencil size={15} />
                       </button>
@@ -341,8 +391,13 @@ const Goals = () => {
                         onClick={() => handleDeleteGoal(goal)}
                         aria-label={`Delete ${goal.name}`}
                         title="Delete goal"
+                        disabled={deletingId !== null || saving}
                       >
-                        <Trash2 size={15} />
+                        {deletingId === goal.id ? (
+                          <span>...</span>
+                        ) : (
+                          <Trash2 size={15} />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -392,16 +447,16 @@ const Goals = () => {
                         completed ? "goal-progress-completed" : ""
                       }`}
                       style={{
-                        width: `${Math.min(
-                          Math.max(percentage, 0),
-                          100
-                        )}%`
+                        width: `${safePercentage}%`
                       }}
                     />
                   </div>
 
                   <div className="goal-progress-footer">
-                    <strong>{percentage.toFixed(1)}% completed</strong>
+                    <strong>
+                      {safePercentage.toFixed(1)}% completed
+                    </strong>
+
                     <span>
                       {formatCurrency(goal.remaining_amount)} left
                     </span>
@@ -429,8 +484,11 @@ const Goals = () => {
         <div
           className="transaction-modal-overlay"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !saving) {
-              setShowModal(false);
+            if (
+              event.target === event.currentTarget &&
+              !saving
+            ) {
+              closeModal();
             }
           }}
         >
@@ -452,13 +510,20 @@ const Goals = () => {
 
               <button
                 type="button"
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 disabled={saving}
                 aria-label="Close modal"
               >
                 <X size={18} />
               </button>
             </div>
+
+            {error && (
+              <div className="goals-error" role="alert">
+                <AlertTriangle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
 
             <label className="transaction-form-label">
               Goal Name
@@ -486,7 +551,7 @@ const Goals = () => {
             </label>
 
             <label className="transaction-form-label">
-              Target Amount (₹)
+              Target Amount (INR)
               <input
                 type="number"
                 name="target_amount"
@@ -500,7 +565,7 @@ const Goals = () => {
             </label>
 
             <label className="transaction-form-label">
-              Current Savings (₹)
+              Current Savings (INR)
               <input
                 type="number"
                 name="current_amount"
@@ -527,7 +592,7 @@ const Goals = () => {
               <button
                 type="button"
                 className="cancel-modal-btn"
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 disabled={saving}
               >
                 Cancel

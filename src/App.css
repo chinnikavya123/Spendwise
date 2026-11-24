@@ -3285,6 +3285,7 @@
 .goal-card-header {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 13px;
 }
 
@@ -3300,13 +3301,17 @@
   border-radius: 11px;
 }
 
-.goal-card-header > div:nth-child(2) {
-  flex: 1;
-  min-width: 0;
+.goal-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 7px;
 }
 
-.goal-card-title {
-  margin: 2px 0 7px;
+.goal-card-title h3 {
+  margin: 0;
   color: #1e293b;
   font-size: 16px;
   font-weight: 700;
@@ -3377,12 +3382,15 @@
   margin-bottom: 9px;
 }
 
-.goal-progress-details span:first-child {
+.goal-progress-details span {
+  display: block;
   color: #64748b;
   font-size: 13px;
 }
 
-.goal-progress-details span:last-child {
+.goal-progress-details strong {
+  display: block;
+  margin-top: 5px;
   color: #1e293b;
   font-size: 14px;
   font-weight: 700;
