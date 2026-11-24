@@ -61,7 +61,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -134,7 +133,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-
 export const getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -162,6 +160,75 @@ export const getProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Something went wrong while retrieving your profile."
+    });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { name, email } = req.body;
+
+    if (!name || !email || typeof name !== "string" || typeof email !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Name and email are required."
+      });
+    }
+
+    const normalizedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedName || normalizedName.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Name must contain between 1 and 100 characters."
+      });
+    }
+
+    if (
+      normalizedEmail.length > 150 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address."
+      });
+    }
+
+    const [existingUsers] = await pool.query(
+      "SELECT id FROM users WHERE email = ? AND id != ?",
+      [normalizedEmail, userId]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This email is already being used by another account."
+      });
+    }
+
+    await pool.query(
+      "UPDATE users SET name = ?, email = ? WHERE id = ?",
+      [normalizedName, normalizedEmail, userId]
+    );
+
+    const [users] = await pool.query(
+      "SELECT id, name, email, created_at FROM users WHERE id = ?",
+      [userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully!",
+      user: users[0]
+    });
+  } catch (error) {
+    console.error("Profile update error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while updating your profile."
     });
   }
 };
