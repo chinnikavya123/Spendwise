@@ -49,7 +49,13 @@ const currency = (value) =>
 const parseDate = (value) => {
   if (!value) return null;
 
-  const date = new Date(`${value}T00:00:00`);
+  const dateString = String(value).slice(0, 10);
+  const [year, month, day] = dateString.split("-").map(Number);
+
+  if (!year || !month || !day) return null;
+
+  const date = new Date(year, month - 1, day);
+
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
@@ -299,42 +305,56 @@ useEffect(() => {
           Loading your financial analytics...
         </div>
       )}
-      <div className="analytics-metrics">
-        <MetricCard
-          title="Total Income"
-          value={currency(summary.income)}
-          subtitle="Money received"
-          icon={TrendingUp}
-          color="green"
-          positive
-        />
+      {loading ? (
+  <div className="analytics-empty">
+    Loading your financial metrics...
+  </div>
+) : error ? (
+  <div className="analytics-empty">
+    Unable to display financial metrics.
+  </div>
+) : (
+  <div className="analytics-metrics">
+    <MetricCard
+      title="Total Income"
+      value={currency(summary.income)}
+      subtitle="Money received"
+      icon={TrendingUp}
+      color="green"
+      positive
+    />
 
-        <MetricCard
-          title="Total Expenses"
-          value={currency(summary.expenses)}
-          subtitle="Money spent"
-          icon={TrendingDown}
-          color="red"
-        />
+    <MetricCard
+      title="Total Expenses"
+      value={currency(summary.expenses)}
+      subtitle="Money spent"
+      icon={TrendingDown}
+      color="red"
+    />
 
-        <MetricCard
-          title="Net Balance"
-          value={currency(summary.balance)}
-          subtitle={summary.balance >= 0 ? "Positive balance" : "Expenses exceed income"}
-          icon={Wallet}
-          color="blue"
-          positive={summary.balance >= 0}
-        />
+    <MetricCard
+      title="Net Balance"
+      value={currency(summary.balance)}
+      subtitle={
+        summary.balance >= 0
+          ? "Positive balance"
+          : "Expenses exceed income"
+      }
+      icon={Wallet}
+      color="blue"
+      positive={summary.balance >= 0}
+    />
 
-        <MetricCard
-          title="Savings Rate"
-          value={`${summary.savingsRate.toFixed(1)}%`}
-          subtitle="Based on your income"
-          icon={PiggyBank}
-          color="purple"
-          positive={summary.savingsRate >= 0}
-        />
-      </div>
+    <MetricCard
+      title="Savings Rate"
+      value={`${summary.savingsRate.toFixed(1)}%`}
+      subtitle="Based on your income"
+      icon={PiggyBank}
+      color="purple"
+      positive={summary.savingsRate >= 0}
+    />
+  </div>
+)}
 
       <div className="analytics-chart-grid">
         <section className="analytics-panel analytics-cashflow-panel">
@@ -348,7 +368,15 @@ useEffect(() => {
             </div>
           </div>
 
-          {cashFlowData.length > 0 ? (
+          {loading ? (
+  <div className="analytics-empty">
+    Loading cash flow data...
+  </div>
+) : error ? (
+  <div className="analytics-empty">
+    Unable to load cash flow data.
+  </div>
+) : cashFlowData.length > 0 ? (
             <div className="analytics-chart">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -414,7 +442,15 @@ useEffect(() => {
             </div>
           </div>
 
-          {categoryData.length > 0 ? (
+          {loading ? (
+  <div className="analytics-empty">
+    Loading spending breakdown...
+  </div>
+) : error ? (
+  <div className="analytics-empty">
+    Unable to load spending breakdown.
+  </div>
+) : categoryData.length > 0 ? (
             <>
               <div className="analytics-pie-chart">
                 <ResponsiveContainer width="100%" height="100%">
