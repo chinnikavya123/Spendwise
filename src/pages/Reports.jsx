@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   FileText,
@@ -5,23 +6,41 @@ import {
   TrendingDown,
   Wallet,
   Filter,
-  RefreshCw
+  RefreshCw,
+  ReceiptText
 } from "lucide-react";
 
 import api from "../services/api";
 
 const formatAmount = (amount) =>
-  `₹${Number(amount || 0).toLocaleString("en-IN", {
+  `\u20B9${Number(amount || 0).toLocaleString("en-IN", {
     maximumFractionDigits: 2
   })}`;
 
+const formatDate = (date) => {
+  if (!date) return "—";
+
+  const [year, month, day] = String(date)
+    .split("T")[0]
+    .split("-");
+
+  if (year && month && day) {
+    return `${day}/${month}/${year}`;
+  }
+
+  return new Date(date).toLocaleDateString("en-IN");
+};
+
+const emptySummary = {
+  total_income: 0,
+  total_expenses: 0,
+  net_savings: 0,
+  total_transactions: 0
+};
+
 export default function Reports() {
-  const [summary, setSummary] = useState({
-    total_income: 0,
-    total_expenses: 0,
-    net_savings: 0,
-    total_transactions: 0
-  });
+  const [summary, setSummary] = useState(emptySummary);
+  const [transactions, setTransactions] = useState([]);
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -39,16 +58,12 @@ export default function Reports() {
         params: filters
       });
 
-      setSummary(response.data.summary || {
-        total_income: 0,
-        total_expenses: 0,
-        net_savings: 0,
-        total_transactions: 0
-      });
+      setSummary(response.data.summary || emptySummary);
+      setTransactions(response.data.transactions || []);
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Unable to load report summary."
+        "Unable to load report data."
       );
     } finally {
       setLoading(false);
@@ -56,40 +71,36 @@ export default function Reports() {
   };
 
   useEffect(() => {
-  let cancelled = false;
+    let cancelled = false;
 
-  const loadReport = async () => {
-    try {
-      const response = await api.get("/reports/transactions");
+    const loadReport = async () => {
+      try {
+        const response = await api.get("/reports/transactions");
 
-      if (!cancelled) {
-        setSummary(response.data.summary || {
-          total_income: 0,
-          total_expenses: 0,
-          net_savings: 0,
-          total_transactions: 0
-        });
+        if (!cancelled) {
+          setSummary(response.data.summary || emptySummary);
+          setTransactions(response.data.transactions || []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err.response?.data?.message ||
+            "Unable to load report data."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    } catch (err) {
-      if (!cancelled) {
-        setError(
-          err.response?.data?.message ||
-          "Unable to load report summary."
-        );
-      }
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
-      }
-    }
-  };
+    };
 
-  loadReport();
+    loadReport();
 
-  return () => {
-    cancelled = true;
-  };
-}, []);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleApplyFilters = () => {
     if (startDate && endDate && startDate > endDate) {
@@ -239,6 +250,90 @@ export default function Reports() {
             <RefreshCw size={16} />
             Reset
           </button>
+        </div>
+      </div>
+
+      <div className="reports-table-card">
+        <div className="reports-table-heading">
+          <div>
+            <div className="reports-section-heading">
+              <ReceiptText size={19} />
+              <h3>Transaction Details</h3>
+            </div>
+            <p>Your transactions based on the selected filters.</p>
+          </div>
+
+          <span className="reports-count">
+            {transactions.length} Transactions
+          </span>
+        </div>
+
+        <div className="reports-table-wrapper">
+          <table className="reports-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th>Payment Method</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="reports-empty">
+                    Loading transactions...
+                  </td>
+                </tr>
+              ) : transactions.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="reports-empty">
+                    No transactions found for the selected filters.
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((transaction) => (
+                  <tr key={transaction.id}>
+                    <td>{formatDate(transaction.transaction_date)}</td>
+
+                    <td>
+                      {transaction.description || "—"}
+                    </td>
+
+                    <td>
+                      {transaction.category_name || "—"}
+                    </td>
+
+                    <td>
+                      <span className={`reports-type ${transaction.type}`}>
+                        {transaction.type}
+                      </span>
+                    </td>
+
+                    <td>
+                      {transaction.payment_method || "—"}
+                    </td>
+
+                    <td>
+                      <span
+                        className={`reports-amount ${
+                          transaction.type === "income"
+                            ? "reports-income"
+                            : "reports-expense"
+                        }`}
+                      >
+                        {transaction.type === "income" ? "+" : "-"}
+                        {formatAmount(transaction.amount)}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
