@@ -232,3 +232,91 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
+
+
+export const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All password fields are required."
+      });
+    }
+
+    if (typeof currentPassword !== "string" ||
+        typeof newPassword !== "string" ||
+        typeof confirmPassword !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid password input."
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must contain at least 8 characters."
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password and confirmation do not match."
+      });
+    }
+
+    const [users] = await pool.query(
+      "SELECT password_hash FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found."
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      users[0].password_hash
+    );
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect."
+      });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from your current password."
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    await pool.query(
+      "UPDATE users SET password_hash = ? WHERE id = ?",
+      [hashedPassword, userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully. Please log in again."
+    });
+  } catch (error) {
+    console.error("Password change error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while changing your password."
+    });
+  }
+};
