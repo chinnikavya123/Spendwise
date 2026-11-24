@@ -12,6 +12,7 @@ import Header from "./components/Header";
 import Overview from "./pages/Overview";
 import Transactions from "./pages/Transactions";
 import Analytics from "./pages/Analytics";
+import Budgets from "./pages/Budgets";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 
@@ -97,10 +98,7 @@ function App() {
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/analytics" element={<Analytics />} />
 
-            <Route
-              path="/budgets"
-              element={<ComingSoon title="Budgets" />}
-            />
+            <Route path="/budgets" element={<Budgets />} />
 
             <Route
               path="/smart-insights"
