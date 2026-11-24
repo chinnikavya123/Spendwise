@@ -7,7 +7,8 @@ import {
   Wallet,
   Filter,
   RefreshCw,
-  ReceiptText
+  ReceiptText,
+  Download
 } from "lucide-react";
 
 import api from "../services/api";
@@ -50,6 +51,7 @@ export default function Reports() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   const fetchReport = async (filters = {}) => {
     try {
@@ -131,6 +133,37 @@ export default function Reports() {
     setCategoryId("");
     fetchReport();
   };
+
+  const handleExportCSV = async () => {
+  try {
+    setExporting(true);
+    setError("");
+
+    const response = await api.get("/reports/export/csv", {
+      responseType: "blob"
+    });
+
+    const blob = new Blob([response.data], {
+      type: "text/csv"
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "spendwise_transactions.csv";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch {
+  setError("Unable to export transactions. Please try again.");
+}finally {
+    setExporting(false);
+  }
+};
 
   const summaryCards = [
     {
@@ -278,6 +311,14 @@ export default function Reports() {
             <RefreshCw size={16} />
             Reset
           </button>
+          <button
+  className="secondary-button"
+  onClick={handleExportCSV}
+  disabled={exporting}
+>
+  <Download size={16} />
+  {exporting ? "Exporting..." : "Export All Transactions"}
+</button>
         </div>
       </div>
 
