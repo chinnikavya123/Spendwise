@@ -15,6 +15,7 @@ import Analytics from "./pages/Analytics";
 import Budgets from "./pages/Budgets";
 import Goals from "./pages/Goals";
 import Reports from "./pages/Reports";
+import SmartInsights from "./pages/SmartInsights";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 
@@ -106,9 +107,9 @@ function App() {
             <Route path="/goals" element={<Goals />} />
             <Route path="/reports" element={<Reports />} />
             <Route
-              path="/smart-insights"
-              element={<ComingSoon title="Smart Insights" />}
-            />
+  path="/smart-insights"
+  element={<SmartInsights />}
+/>
 
             <Route
               path="/settings"
