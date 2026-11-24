@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
-import { dashboardStats, budgetData } from "../data/dashboardData";
+import { dashboardStats } from "../data/dashboardData";
 
 import StatCard from "../components/StatCard";
 import SpendingChart from "../components/SpendingChart";
@@ -20,7 +20,16 @@ import { useAuth } from "../context/useAuth";
 
 export default function Overview() {
   const { user } = useAuth();
+  const currentDate = new Date();
 
+const currentMonth = `${currentDate.getFullYear()}-${String(
+  currentDate.getMonth() + 1
+).padStart(2, "0")}`;
+
+const currentMonthLabel = currentDate.toLocaleDateString("en-IN", {
+  month: "long",
+  year: "numeric"
+});
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summaryError, setSummaryError] = useState("");
@@ -33,6 +42,9 @@ const [monthlyError, setMonthlyError] = useState("");
 const [categoryData, setCategoryData] = useState([]);
 const [categoryLoading, setCategoryLoading] = useState(true);
 const [categoryError, setCategoryError] = useState("");
+const [budgets, setBudgets] = useState([]);
+const [budgetsLoading, setBudgetsLoading] = useState(true);
+const [budgetsError, setBudgetsError] = useState("");
   useEffect(() => {
     const fetchSummary = async () => {
       try {
@@ -104,6 +116,27 @@ useEffect(() => {
   fetchCategoryAnalytics();
 }, []);
 
+useEffect(() => {
+  const fetchBudgets = async () => {
+    try {
+      const response = await api.get("/budgets", {
+        params: { month: currentMonth }
+      });
+
+      setBudgets(response.data.budgets || []);
+    } catch (error) {
+      setBudgetsError(
+        error.response?.data?.message ||
+        "Unable to load budget progress."
+      );
+    } finally {
+      setBudgetsLoading(false);
+    }
+  };
+
+  fetchBudgets();
+}, [currentMonth]);
+
   const summaryValues = {
     "Total Balance": summary?.balance ?? 0,
     "Monthly Income": summary?.monthly_income ?? 0,
@@ -130,7 +163,7 @@ useEffect(() => {
 
         <button className="date-button">
           <CalendarDays size={17} />
-          November 2026
+          {currentMonthLabel}
         </button>
       </div>
 
@@ -263,49 +296,64 @@ useEffect(() => {
       </section>
 
       <section className="budget-section">
-        <div className="section-heading">
-          <div>
-            <h3>Budget Progress</h3>
-            <p>Keep your monthly spending on track</p>
+  <div className="section-heading">
+    <div>
+      <h3>Budget Progress</h3>
+      <p>Keep your monthly spending on track</p>
+    </div>
+
+    <button
+      className="text-button"
+      onClick={() => window.location.href = "/budgets"}
+    >
+      Manage budgets <ArrowRight size={15} />
+    </button>
+  </div>
+
+  <div className="budget-grid">
+    {budgetsLoading ? (
+      <p>Loading budget progress...</p>
+    ) : budgetsError ? (
+      <p>{budgetsError}</p>
+    ) : budgets.length === 0 ? (
+      <p>No budgets created for this month yet.</p>
+    ) : (
+      budgets.map((budget) => {
+        const percentage = Math.min(
+          Number(budget.percentage_used || 0),
+          100
+        );
+
+        return (
+          <div className="budget-item" key={budget.id}>
+            <div className="budget-top">
+              <strong>{budget.category_name}</strong>
+              <span>{Math.round(Number(budget.percentage_used || 0))}%</span>
+            </div>
+
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+
+            <div className="budget-amounts">
+              <strong>
+                ₹{Number(budget.spent_amount).toLocaleString("en-IN")}
+              </strong>
+              <span>
+                of ₹{Number(budget.budget_amount).toLocaleString("en-IN")}
+              </span>
+            </div>
+
+            <span>{budget.status}</span>
           </div>
-
-          <button className="text-button">
-            Manage budgets <ArrowRight size={15} />
-          </button>
-        </div>
-
-        <div className="budget-grid">
-          {budgetData.map((budget) => {
-            const percentage = Math.min(
-              (budget.spent / budget.limit) * 100,
-              100
-            );
-
-            return (
-              <div className="budget-item" key={budget.name}>
-                <div className="budget-top">
-                  <strong>{budget.name}</strong>
-                  <span>{Math.round(percentage)}%</span>
-                </div>
-
-                <div className="progress-track">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-
-                <div className="budget-amounts">
-                  <strong>₹{budget.spent.toLocaleString("en-IN")}</strong>
-                  <span>
-                    of ₹{budget.limit.toLocaleString("en-IN")}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+        );
+      })
+    )}
+  </div>
+</section>
     </div>
   );
 }
