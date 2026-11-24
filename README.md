@@ -456,12 +456,18 @@ The goal is to make personal finance management simpler, more organized, and acc
 **👩‍💻 GitHub Profile:** [@chinnikavya123](https://github.com/chinnikavya123)
 
 ---
+<p align="center">
+  ⭐ If you find SpendWise useful, consider giving this repository a star!
+</p>
 
-⭐ If you find SpendWise useful, consider giving this repository a star!
-
-**💰 Track. Manage. Save. Grow with SpendWise!**
+<p align="center">
+  <strong>💰 Track. Manage. Save. Grow with SpendWise!</strong>
+</p>
 
 ---
 
-Made with ❤️ by [**Chinni Kavya Sri**](https://github.com/chinnikavya123)  
-👩‍💻 Owner & Developer of SpendWise
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/chinnikavya123"><strong>Chinni Kavya Sri</strong></a>
+  <br/>
+  👩‍💻 Owner & Developer of SpendWise
+</p>
