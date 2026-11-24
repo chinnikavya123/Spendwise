@@ -6,6 +6,7 @@ import {
   ArrowLeftRight,
   ChartNoAxesCombined,
   Wallet,
+  PiggyBank,
   BrainCircuit,
   Settings,
   CircleHelp,
@@ -18,6 +19,7 @@ const navigation = [
   { name: "Transactions", path: "/transactions", icon: ArrowLeftRight },
   { name: "Analytics", path: "/analytics", icon: ChartNoAxesCombined },
   { name: "Budgets", path: "/budgets", icon: Wallet },
+  { name: "Savings Goals", path: "/goals", icon: PiggyBank },
   { name: "Smart Insights", path: "/smart-insights", icon: BrainCircuit }
 ];
 

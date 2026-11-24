@@ -13,6 +13,7 @@ import Overview from "./pages/Overview";
 import Transactions from "./pages/Transactions";
 import Analytics from "./pages/Analytics";
 import Budgets from "./pages/Budgets";
+import Goals from "./pages/Goals";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 
@@ -25,6 +26,7 @@ const pageNames = {
   "/transactions": "Transactions",
   "/analytics": "Analytics",
   "/budgets": "Budgets",
+  "/goals": "Savings Goals",
   "/smart-insights": "Smart Insights",
   "/settings": "Settings"
 };
@@ -99,7 +101,7 @@ function App() {
             <Route path="/analytics" element={<Analytics />} />
 
             <Route path="/budgets" element={<Budgets />} />
-
+            <Route path="/goals" element={<Goals />} />
             <Route
               path="/smart-insights"
               element={<ComingSoon title="Smart Insights" />}
