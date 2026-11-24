@@ -24,7 +24,7 @@ import {
   ArrowUpRight
 } from "lucide-react";
 
-const STORAGE_KEY = "spendwise_transactions";
+import api from "../services/api";
 
 const COLORS = [
   "#10b981",
@@ -51,15 +51,6 @@ const parseDate = (value) => {
 
   const date = new Date(`${value}T00:00:00`);
   return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const getTransactions = () => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
 };
 
 const getPeriodDates = (period, transactions) => {
@@ -141,20 +132,40 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function Analytics() {
-  const [transactions, setTransactions] = useState(getTransactions);
-  const [period, setPeriod] = useState("thisMonth");
+  const [transactions, setTransactions] = useState([]);
+const [period, setPeriod] = useState("thisMonth");
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
 
-  useEffect(() => {
-    const refreshTransactions = () => {
-      setTransactions(getTransactions());
-    };
+useEffect(() => {
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-    window.addEventListener("storage", refreshTransactions);
+      const response = await api.get("/reports/transactions");
 
-    return () => {
-      window.removeEventListener("storage", refreshTransactions);
-    };
-  }, []);
+      const data = response.data.transactions || [];
+
+      setTransactions(
+        data.map((item) => ({
+          ...item,
+          date: item.transaction_date,
+          category: item.category_name
+        }))
+      );
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Unable to load analytics data."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchTransactions();
+}, []);
 
   const filteredTransactions = useMemo(() => {
     const { start, end } = getPeriodDates(period, transactions);
@@ -269,6 +280,25 @@ export default function Analytics() {
         </select>
       </div>
 
+            {error && (
+        <div
+          style={{
+            padding: "12px 16px",
+            borderRadius: "8px",
+            background: "#fef2f2",
+            color: "#dc2626",
+            fontSize: "14px"
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className="analytics-empty">
+          Loading your financial analytics...
+        </div>
+      )}
       <div className="analytics-metrics">
         <MetricCard
           title="Total Income"
