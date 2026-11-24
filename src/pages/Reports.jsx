@@ -41,10 +41,12 @@ const emptySummary = {
 export default function Reports() {
   const [summary, setSummary] = useState(emptySummary);
   const [transactions, setTransactions] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [type, setType] = useState("");
+  const [categoryId, setCategoryId] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,13 +75,17 @@ export default function Reports() {
   useEffect(() => {
     let cancelled = false;
 
-    const loadReport = async () => {
+    const loadInitialData = async () => {
       try {
-        const response = await api.get("/reports/transactions");
+        const [reportResponse, categoryResponse] = await Promise.all([
+          api.get("/reports/transactions"),
+          api.get("/categories")
+        ]);
 
         if (!cancelled) {
-          setSummary(response.data.summary || emptySummary);
-          setTransactions(response.data.transactions || []);
+          setSummary(reportResponse.data.summary || emptySummary);
+          setTransactions(reportResponse.data.transactions || []);
+          setCategories(categoryResponse.data.categories || []);
         }
       } catch (err) {
         if (!cancelled) {
@@ -95,7 +101,7 @@ export default function Reports() {
       }
     };
 
-    loadReport();
+    loadInitialData();
 
     return () => {
       cancelled = true;
@@ -113,6 +119,7 @@ export default function Reports() {
     if (startDate) filters.start_date = startDate;
     if (endDate) filters.end_date = endDate;
     if (type) filters.type = type;
+    if (categoryId) filters.category_id = categoryId;
 
     fetchReport(filters);
   };
@@ -121,6 +128,7 @@ export default function Reports() {
     setStartDate("");
     setEndDate("");
     setType("");
+    setCategoryId("");
     fetchReport();
   };
 
@@ -230,6 +238,26 @@ export default function Reports() {
               <option value="expense">Expense</option>
             </select>
           </div>
+
+          <div className="form-group">
+            <label>Category</label>
+            <select
+              className="form-input"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              <option value="">All Categories</option>
+
+              {categories.map((category) => (
+                <option
+                  key={category.id}
+                  value={String(category.id)}
+                >
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="reports-filter-actions">
@@ -297,7 +325,9 @@ export default function Reports() {
               ) : (
                 transactions.map((transaction) => (
                   <tr key={transaction.id}>
-                    <td>{formatDate(transaction.transaction_date)}</td>
+                    <td>
+                      {formatDate(transaction.transaction_date)}
+                    </td>
 
                     <td>
                       {transaction.description || "—"}
