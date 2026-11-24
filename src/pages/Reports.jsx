@@ -3,7 +3,9 @@ import {
   FileText,
   TrendingUp,
   TrendingDown,
-  Wallet
+  Wallet,
+  Filter,
+  RefreshCw
 } from "lucide-react";
 
 import api from "../services/api";
@@ -21,34 +23,95 @@ export default function Reports() {
     total_transactions: 0
   });
 
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [type, setType] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const fetchReport = async (filters = {}) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await api.get("/reports/transactions", {
+        params: filters
+      });
+
+      setSummary(response.data.summary || {
+        total_income: 0,
+        total_expenses: 0,
+        net_savings: 0,
+        total_transactions: 0
+      });
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Unable to load report summary."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        setLoading(true);
+  let cancelled = false;
 
-        const response = await api.get("/reports/transactions");
+  const loadReport = async () => {
+    try {
+      const response = await api.get("/reports/transactions");
 
+      if (!cancelled) {
         setSummary(response.data.summary || {
           total_income: 0,
           total_expenses: 0,
           net_savings: 0,
           total_transactions: 0
         });
-      } catch (err) {
+      }
+    } catch (err) {
+      if (!cancelled) {
         setError(
           err.response?.data?.message ||
           "Unable to load report summary."
         );
-      } finally {
+      }
+    } finally {
+      if (!cancelled) {
         setLoading(false);
       }
-    };
+    }
+  };
 
+  loadReport();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
+  const handleApplyFilters = () => {
+    if (startDate && endDate && startDate > endDate) {
+      setError("Start date cannot be later than end date.");
+      return;
+    }
+
+    const filters = {};
+
+    if (startDate) filters.start_date = startDate;
+    if (endDate) filters.end_date = endDate;
+    if (type) filters.type = type;
+
+    fetchReport(filters);
+  };
+
+  const handleResetFilters = () => {
+    setStartDate("");
+    setEndDate("");
+    setType("");
     fetchReport();
-  }, []);
+  };
 
   const summaryCards = [
     {
@@ -113,6 +176,70 @@ export default function Reports() {
             </div>
           );
         })}
+      </div>
+
+      <div className="reports-filter-card">
+        <div className="reports-section-heading">
+          <Filter size={19} />
+          <h3>Filter Report</h3>
+        </div>
+
+        <div className="reports-filter-grid">
+          <div className="form-group">
+            <label>Start Date</label>
+            <input
+              type="date"
+              className="form-input"
+              value={startDate}
+              max={endDate || undefined}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>End Date</label>
+            <input
+              type="date"
+              className="form-input"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Transaction Type</label>
+            <select
+              className="form-input"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+            >
+              <option value="">All Types</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="reports-filter-actions">
+          <button
+            className="primary-button"
+            onClick={handleApplyFilters}
+            disabled={loading}
+          >
+            <Filter size={16} />
+            Apply Filters
+          </button>
+
+          <button
+            className="secondary-button"
+            onClick={handleResetFilters}
+            disabled={loading}
+          >
+            <RefreshCw size={16} />
+            Reset
+          </button>
+        </div>
       </div>
     </div>
   );
